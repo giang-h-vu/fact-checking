@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Fact Checking API
+  version: 1.0.0
+  description: |
+    Agent-driven fact-checking service. A claim is routed through three LangGraph
+    agents (document search → evidence retrieval → claim verification) and the
+    pipeline streams progress to clients over Server-Sent Events.
+
+    Source of truth — do not duplicate this spec inside any service. Both the
+    FastAPI backend and the React frontend are generated from this file
+    (see /api/codegen.sh).
+  contact:
+    name: Fact Checking Tool
+servers:
+  - url: http://localhost:8000
+    description: Local dev
+tags:
+  - name: verify
+    description: Real-time claim verification (SSE)
+  - name: history
+    description: Past verification requests
+
+paths:
+  /api/v1/verify:
+    post:
+      tags: [verify]
+      operationId: streamVerify
+      summary: Verify a claim and stream agent progress over SSE
+      description: |
+        Returns `text/event-stream`. The stream emits the following named
+        events in order; clients should parse `event:` and JSON-decode `data:`.
+
+        | event             | data shape                                                |
+        |-------------------|-----------------------------------------------------------|
+        | search_started    | `{ "queries": string[] }`                                 |
+        | candidates_found  | `{ "items": SearchCandidate[] }`                          |
+        | retrieval_started | `{ "url": string, "title": string }`                      |
+        | passage_found     | `{ "url": string, "passage": string }`                    |
+        | passage_verdict   | `{ "label": Verdict, "reasoning": string, "url": string }`|
+        | final_verdict     | `{ "verdict": Verdict, "citations": Citation[] }`         |
+        | done              | `{}`                                                      |
+        | error             | Error                                                     |
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+      responses:
+        '200':
+          description: SSE stream of agent progress events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: "Concatenated SSE frames (event/data lines per RFC 8895)"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/history:
+    get:
+      tags: [history]
+      operationId: listHistory
+      summary: List recent verification requests
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Most recent verification requests, newest first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  schemas:
+    VerifyRequest:
+      type: object
+      required: [claim]
+      properties:
+        claim:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: The natural-language statement to verify
+        prefer_source:
+          type: string
+          enum: [auto, wiki, web]
+          default: auto
+          description: Hint to the DocumentSearchAgent; `auto` lets the agent decide
+
+    Verdict:
+      type: string
+      enum: [SUPPORTED, REFUTED, NOT_ENOUGH_INFO]
+
+    SearchCandidate:
+      type: object
+      required: [url, title, source]
+      properties:
+        url:    { type: string, format: uri }
+        title:  { type: string }
+        snippet: { type: string }
+        source: { type: string, enum: [google, bing, wikipedia] }
+
+    Citation:
+      type: object
+      required: [url, title, passage, label]
+      properties:
+        url:     { type: string, format: uri }
+        title:   { type: string }
+        passage: { type: string }
+        label:   { $ref: '#/components/schemas/Verdict' }
+        reasoning: { type: string }
+
+    HistoryItem:
+      type: object
+      required: [id, claim, datetime, verdict]
+      properties:
+        id:       { type: integer }
+        claim:    { type: string }
+        datetime: { type: string, format: date-time }
+        verdict:  { $ref: '#/components/schemas/Verdict' }
+        citations:
+          type: array
+          items: { $ref: '#/components/schemas/Citation' }
+
+    HistoryResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/HistoryItem' }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:    { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
