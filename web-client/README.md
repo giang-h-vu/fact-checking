@@ -4,18 +4,18 @@ React + Redux web client for the fact-checking service. Submits claims to the ba
 
 ## Stack
 
-- **React 18** (Create React App)
+- **React 18** (Vite)
 - **Redux + redux-thunk** (state management)
-- **Material-UI v4** (components)
+- **MUI v5** (components)
 
 ## Setup & run
 
 ```bash
 npm install
-npm start    # → http://localhost:3000
+npm start    # → http://localhost:5173
 ```
 
-The backend must be running at `http://localhost:8000`. See [`server/README.md`](../server/README.md) for backend setup.
+The backend must be running at `http://localhost:8000`. The Vite dev server proxies `/api` to the backend by default. See [`server/README.md`](../server/README.md) for backend setup.
 
 ## Tests
 
