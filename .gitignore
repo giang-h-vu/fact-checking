@@ -134,8 +134,19 @@ db.test.sqlite3
 crawled_files
 
 
-# Client-side 
+# Client-side
 node_modules
+
+# Project runtime data
+*.db
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+server/.local/
+
+# Ruff
+.ruff_cache/
 
 # Claude
 .claude
