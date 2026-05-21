@@ -1,6 +1,6 @@
-SPEC := ../openapi.yaml
-SERVER_GEN := ../../server/app/api/generated
-WEB_CLIENT_GEN := ../../web-client/src/api.ts
+SPEC := ./openapi.yaml
+SERVER_GEN := ../server/app/api/generated
+WEB_CLIENT_GEN := ../web-client/src/api.ts
 
 .PHONY: generate lint check clean help
 
@@ -12,16 +12,16 @@ help:
 	@echo "  clean     - Remove generated artefacts (forces full regeneration)"
 
 generate:
-	./codegen.sh
+	./scripts/codegen.sh
 
 lint:
-	npx --yes --prefix . @redocly/cli lint $(SPEC)
+	npx --yes --prefix ./scripts @redocly/cli lint $(SPEC)
 
 check: generate
 	@git diff --exit-code -- $(SERVER_GEN) $(WEB_CLIENT_GEN) \
 	  || (echo ""; \
 	      echo "ERROR: generated code drifted from $(SPEC)."; \
-	      echo "       Run 'make -C api/scripts generate' and commit the result."; \
+	      echo "       Run 'make -C api generate' and commit the result."; \
 	      exit 1)
 
 clean:
