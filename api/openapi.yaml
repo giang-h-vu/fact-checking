@@ -107,6 +107,18 @@ components:
       type: string
       enum: [SUPPORTED, REFUTED, NOT_ENOUGH_INFO]
 
+    SseEventType:
+      type: string
+      enum:
+        - search_started
+        - candidates_found
+        - retrieval_started
+        - passage_found
+        - passage_verdict
+        - final_verdict
+        - done
+        - error
+
     SearchCandidate:
       type: object
       required: [url, title, source]
