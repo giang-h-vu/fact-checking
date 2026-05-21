@@ -151,3 +151,7 @@ server/.local/
 # Claude
 .claude
 CLAUDE.md
+
+
+# Exlclude in web-client
+!web-client/src/lib/
