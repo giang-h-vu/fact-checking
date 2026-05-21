@@ -5,8 +5,8 @@ This directory is the **single source of truth** for the public API surface of t
 ```
 api/
 ├── openapi.yaml          # the contract — the only file you should hand-edit here
+├── Makefile              # make generate | lint | check | clean
 └── scripts/
-    ├── Makefile          # make generate | lint | check | clean
     ├── codegen.sh        # regenerates every downstream artefact
     ├── package.json      # pins JS-based generators (Redocly, openapi-typescript)
     └── redocly.yaml      # Redocly lint config
@@ -27,20 +27,20 @@ Run these from the **repo root**:
 
 | What you want | Command |
 |---|---|
-| Lint the spec | `make -C api/scripts lint` |
-| Regenerate stubs after editing the spec | `make -C api/scripts generate` |
-| Verify CI will pass | `make -C api/scripts check` |
-| Delete generated artefacts (force full regen) | `make -C api/scripts clean` |
+| Lint the spec | `make -C api lint` |
+| Regenerate stubs after editing the spec | `make -C api generate` |
+| Verify CI will pass | `make -C api check` |
+| Delete generated artefacts (force full regen) | `make -C api clean` |
 
-Or `cd api/scripts` and drop the `make -C api/scripts` prefix.
+Or `cd api` and drop the `make -C api` prefix.
 
 `make check` is the gate: it regenerates and fails if the working tree differs from what's committed. Drift between spec and generated code cannot land on `main`.
 
 ## Editing the spec
 
 1. Edit `openapi.yaml`.
-2. `make -C api/scripts lint` — must pass before continuing.
-3. `make -C api/scripts generate` — produces fresh stubs in both services.
+2. `make -C api lint` — must pass before continuing.
+3. `make -C api generate` — produces fresh stubs in both services.
 4. Commit `openapi.yaml` **together with** the regenerated files in the same change.
 
 ## Why generators?

@@ -46,7 +46,7 @@ app/
 ├── api/
 │   ├── verify.py          # POST /api/v1/verify — drives the graph, yields SSE events
 │   ├── history.py         # GET  /api/v1/history — recent verifications + citations
-│   └── generated/         # GENERATED — do not edit (regenerate via make -C api/scripts generate)
+│   └── generated/         # GENERATED — do not edit (regenerate via make -C api generate)
 │       ├── models.py
 │       └── routers/
 ├── agents/
@@ -94,8 +94,8 @@ On any error: `error` (uniform shape; clients never handle two failure modes).
 
 ```bash
 # From repo root:
-make -C api/scripts generate   # rewrites app/api/generated/ + web-client/src/api.ts
-make -C api/scripts check      # CI gate — fails if generated code drifted
+make -C api generate   # rewrites app/api/generated/ + web-client/src/api.ts
+make -C api check      # CI gate — fails if generated code drifted
 ```
 
 Edit `api/openapi.yaml`, run `generate`, commit both together.

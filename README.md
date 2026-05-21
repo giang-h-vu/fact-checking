@@ -34,9 +34,9 @@ See [`server/README.md`](server/README.md) and [`web-client/README.md`](web-clie
 ## API contract
 
 ```bash
-make -C api/scripts generate   # regenerate server/app/api/generated/ + web-client/src/api.ts
-make -C api/scripts check      # CI gate — fails on drift
-make -C api/scripts lint       # Redocly lint only
+make -C api generate   # regenerate server/app/api/generated/ + web-client/src/api.ts
+make -C api check      # CI gate — fails on drift
+make -C api lint       # Redocly lint only
 ```
 
 ## Project rules

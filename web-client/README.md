@@ -67,7 +67,7 @@ The reducer accumulates state incrementally:
 
 ## Generated types
 
-`src/api.ts` is generated from `api/openapi.yaml` via `openapi-typescript`. Do not edit it by hand — run `make -C api/scripts generate` from the repo root after changing the spec.
+`src/api.ts` is generated from `api/openapi.yaml` via `openapi-typescript`. Do not edit it by hand — run `make -C api generate` from the repo root after changing the spec.
 
 ## Routes
 
