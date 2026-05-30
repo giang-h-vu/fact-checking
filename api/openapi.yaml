@@ -54,9 +54,11 @@ paths:
             text/event-stream:
               schema:
                 type: string
-                description: "Concatenated SSE frames (event/data lines per RFC 8895)"
+                description: "Concatenated SSE frames (event/data lines per WHATWG HTML Living Standard §9.2)"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -83,6 +85,8 @@ paths:
                 $ref: '#/components/schemas/HistoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -169,6 +173,11 @@ components:
   responses:
     BadRequest:
       description: Invalid request payload
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnprocessableEntity:
+      description: Request body failed schema validation
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }

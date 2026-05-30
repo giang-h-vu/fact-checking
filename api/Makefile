@@ -15,7 +15,7 @@ generate:
 	./scripts/codegen.sh
 
 lint:
-	npx --yes --prefix ./scripts @redocly/cli lint $(SPEC)
+	npx --yes --prefix ./scripts @redocly/cli lint --config ./scripts/redocly.yaml $(SPEC)
 
 check: generate
 	@git diff --exit-code -- $(SERVER_GEN) $(WEB_CLIENT_GEN) \
