@@ -116,6 +116,15 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Request body failed schema validation */
+        UnprocessableEntity: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Internal server error */
         ServerError: {
             headers: {
@@ -156,6 +165,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            422: components["responses"]["UnprocessableEntity"];
             500: components["responses"]["ServerError"];
         };
     };
@@ -180,6 +190,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            422: components["responses"]["UnprocessableEntity"];
             500: components["responses"]["ServerError"];
         };
     };
