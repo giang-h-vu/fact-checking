@@ -42,8 +42,9 @@ def _route_after_retrieval(state: FactCheckState) -> Literal[GraphNode.SEARCH, G
     return GraphNode.VERIFY
 
 
+# .model_copy to use Pydantic validation at runtime
 def _bump_retries(state: FactCheckState) -> FactCheckState:
-    return {"retries": state.retries + 1}
+    return state.model_copy(update={"retries": state.retries + 1})
 
 
 @lru_cache
