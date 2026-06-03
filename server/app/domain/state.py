@@ -5,13 +5,20 @@ where possible so each agent step sees what previous agent step produced.
 """
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
 
 from app.tools._models import FetchedPage, SearchHit
 
-Verdict = Literal["SUPPORTED", "REFUTED", "NOT_ENOUGH_INFO"]
+
+class Verdict(StrEnum):
+    SUPPORTED = "SUPPORTED"
+    REFUTED = "REFUTED"
+    NOT_ENOUGH_INFO = "NOT_ENOUGH_INFO"
+
+
 PreferSource = Literal["auto", "wiki", "web"]
 
 
@@ -48,7 +55,7 @@ class FactCheckState(SearchOutput, RetrievalOutput, VerificationOutput):
     # Input
     claim: str
     prefer_source: PreferSource = "auto"
-    
+
     # Loop control
     retries: int = 0
     error: str | None = None

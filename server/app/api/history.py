@@ -1,11 +1,11 @@
 """GET /api/v1/history — recent verification requests with their citations."""
 from __future__ import annotations
 
-from typing import (Annotated, TypeVar)
+from typing import Annotated, Sequence, TypeVar
 from fastapi import APIRouter, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import Select
-from sqlmodel import select
+from sqlmodel import col, select
 
 
 from app.platform.db.models import Citation, SearchRequest
@@ -19,9 +19,9 @@ from app.api.generated.models import (
     Verdict,
 )
 
-GenericType = TypeVar("GenericT")
+T = TypeVar("T")
 
-async def _fetch_all(session: AsyncSession, select_query: Select[tuple[GenericType]]) -> list[GenericType]:
+async def _fetch_all(session: AsyncSession, select_query: Select[tuple[T]]) -> Sequence[T]:
     return (await session.execute(select_query)).scalars().all()
 
 router = APIRouter(tags=["history"])
@@ -30,42 +30,47 @@ router = APIRouter(tags=["history"])
 async def list_history(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> HistoryResponse:
-    
     async with session_scope() as session:
         requests  = await _fetch_all(
             session,
-            select(SearchRequest).order_by(SearchRequest.created_at.desc()).limit(limit)
+            select(SearchRequest).order_by(col(SearchRequest.created_at).desc()).limit(limit)
         )
         if not requests:
             return HistoryResponse(items=[])
 
-        ids = [r.id for r in requests]
+        ids = [r.id for r in requests if r.id is not None]
         
         citations_by_request: dict[int, list[Citation]] = {rid: [] for rid in ids}
         citations = await _fetch_all(
             session,
-            select(Citation).where(Citation.request_id.in_(ids))
+            select(Citation).where(col(Citation.request_id).in_(ids))
         )
         for c in citations:
             citations_by_request[c.request_id].append(c)
 
-    items = [
-        HistoryItem(
-            id=r.id,
-            claim=r.claim,
-            datetime=r.created_at,
-            verdict=Verdict(r.verdict),
-            citations=[
-                ApiCitation(
-                    url=c.url,
-                    title=c.title,
-                    passage=c.passage,
-                    label=Verdict(c.label),
-                    reasoning=c.reasoning,
+    historyItems: list[HistoryItem] = []
+    for r in requests:
+        if r.id is not None:
+            apiCitations: list[ApiCitation] = []
+            for c in citations_by_request[r.id]:
+                apiCitations.append(
+                    ApiCitation.model_validate({
+                        "url": c.url,
+                        "title": c.title,
+                        "passage": c.passage,
+                        "label": c.label,
+                        "reasoning": c.reasoning,
+                    })  
                 )
-                for c in (citations_by_request[r.id] if r.id is not None else [])
-            ],
-        )
-        for r in requests
-    ]
-    return HistoryResponse(items=items)
+
+            historyItems.append(
+                HistoryItem(
+                    id=r.id,
+                    claim=r.claim,
+                    datetime=r.created_at,
+                    verdict=Verdict(r.verdict),
+                    citations=apiCitations,
+                )
+            )
+
+    return HistoryResponse(items=historyItems)
