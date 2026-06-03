@@ -158,7 +158,7 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
         yield sse(SseEventType.done)
 
     except Exception as e:
-        log.exception("verify stream failed")
+        log.exception("Verify stream failed")
         yield sse(SseEventType.error, Error(code="internal", message=str(e)))
 
 

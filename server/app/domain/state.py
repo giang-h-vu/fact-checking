@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app.tools._models import FetchedPage, SearchHit
+from app.tools.sources import FetchedPage, SearchHit
 
 
 class Verdict(StrEnum):
