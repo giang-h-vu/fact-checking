@@ -104,8 +104,7 @@ components:
         prefer_source:
           type: string
           enum: [auto, wiki, web]
-          default: auto
-          description: Hint to the DocumentSearchAgent; `auto` lets the agent decide
+          description: "Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto."
 
     Verdict:
       type: string

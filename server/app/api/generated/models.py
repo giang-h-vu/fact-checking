@@ -28,9 +28,9 @@ class VerifyRequest(BaseModel):
     prefer_source: Annotated[
         Optional[PreferSource],
         Field(
-            description='Hint to the DocumentSearchAgent; `auto` lets the agent decide'
+            description='Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto.'
         ),
-    ] = 'auto'
+    ] = None
 
 
 class Verdict(Enum):
@@ -42,7 +42,6 @@ class Verdict(Enum):
 class SseEventType(Enum):
     search_started = 'search_started'
     candidates_found = 'candidates_found'
-    retrieval_started = 'retrieval_started'
     passage_found = 'passage_found'
     passage_verdict = 'passage_verdict'
     final_verdict = 'final_verdict'
@@ -87,3 +86,28 @@ class Error(BaseModel):
     code: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
+
+class SearchStartedPayload(BaseModel):
+    queries: List[str]
+
+
+class CandidatesFoundPayload(BaseModel):
+    items: List[SearchCandidate]
+
+
+class PassageFoundPayload(BaseModel):
+    url: AnyUrl
+    title: str
+    passage: str
+
+
+class PassageVerdictPayload(BaseModel):
+    url: AnyUrl
+    label: Verdict
+    reasoning: str
+
+
+class FinalVerdictPayload(BaseModel):
+    verdict: Verdict
+    citations: List[Citation]

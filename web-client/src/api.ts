@@ -17,17 +17,17 @@ export interface paths {
          * Verify a claim and stream agent progress over SSE
          * @description Returns `text/event-stream`. The stream emits the following named
          *     events in order; clients should parse `event:` and JSON-decode `data:`.
+         *     The `data` payload of each event is described by the referenced schema.
          *
-         *     | event             | data shape                                                |
-         *     |-------------------|-----------------------------------------------------------|
-         *     | search_started    | `{ "queries": string[] }`                                 |
-         *     | candidates_found  | `{ "items": SearchCandidate[] }`                          |
-         *     | retrieval_started | `{ "url": string, "title": string }`                      |
-         *     | passage_found     | `{ "url": string, "passage": string }`                    |
-         *     | passage_verdict   | `{ "label": Verdict, "reasoning": string, "url": string }`|
-         *     | final_verdict     | `{ "verdict": Verdict, "citations": Citation[] }`         |
-         *     | done              | `{}`                                                      |
-         *     | error             | Error                                                     |
+         *     | event            | data schema             |
+         *     |------------------|-------------------------|
+         *     | search_started   | `SearchStartedPayload`  |
+         *     | candidates_found | `CandidatesFoundPayload`|
+         *     | passage_found    | `PassageFoundPayload`   |
+         *     | passage_verdict  | `PassageVerdictPayload` |
+         *     | final_verdict    | `FinalVerdictPayload`   |
+         *     | done             | `{}`                    |
+         *     | error            | `Error`                 |
          */
         post: operations["streamVerify"];
         delete?: never;
@@ -61,16 +61,15 @@ export interface components {
             /** @description The natural-language statement to verify */
             claim: string;
             /**
-             * @description Hint to the DocumentSearchAgent; `auto` lets the agent decide
-             * @default auto
+             * @description Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto.
              * @enum {string}
              */
-            prefer_source: "auto" | "wiki" | "web";
+            prefer_source?: "auto" | "wiki" | "web";
         };
         /** @enum {string} */
         Verdict: "SUPPORTED" | "REFUTED" | "NOT_ENOUGH_INFO";
         /** @enum {string} */
-        SseEventType: "search_started" | "candidates_found" | "retrieval_started" | "passage_found" | "passage_verdict" | "final_verdict" | "done" | "error";
+        SseEventType: "search_started" | "candidates_found" | "passage_found" | "passage_verdict" | "final_verdict" | "done" | "error";
         SearchCandidate: {
             /** Format: uri */
             url: string;
@@ -104,6 +103,28 @@ export interface components {
             details?: {
                 [key: string]: unknown;
             };
+        };
+        SearchStartedPayload: {
+            queries: string[];
+        };
+        CandidatesFoundPayload: {
+            items: components["schemas"]["SearchCandidate"][];
+        };
+        PassageFoundPayload: {
+            /** Format: uri */
+            url: string;
+            title: string;
+            passage: string;
+        };
+        PassageVerdictPayload: {
+            /** Format: uri */
+            url: string;
+            label: components["schemas"]["Verdict"];
+            reasoning: string;
+        };
+        FinalVerdictPayload: {
+            verdict: components["schemas"]["Verdict"];
+            citations: components["schemas"]["Citation"][];
         };
     };
     responses: {
