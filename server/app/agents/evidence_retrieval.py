@@ -8,10 +8,10 @@ Two stages:
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from asyncio import Semaphore, gather
 from pydantic import BaseModel
 
 from app.domain.state import FactCheckState, RetrievalOutput
@@ -43,7 +43,7 @@ class PassageExtraction(BaseModel):
 
 PAGE_CHAR_LIMIT = 10000  # keep prompt manageable for small local models
 
-async def _fetch_one(url: str, sem: asyncio.Semaphore) -> FetchedPage | None:
+async def _fetch_one(url: str, sem: Semaphore) -> FetchedPage | None:
     async with sem:
         try:
             return await fetch_url.ainvoke({"url": url})
@@ -54,9 +54,9 @@ async def _fetch_one(url: str, sem: asyncio.Semaphore) -> FetchedPage | None:
 
 async def _fetch_all(urls: list[str]) -> list[FetchedPage]:
     settings = get_settings()
-    sem = asyncio.Semaphore(settings.max_concurrent_fetches)
+    sem = Semaphore(settings.max_concurrent_fetches)
     coroutines = [_fetch_one(url, sem) for url in urls]
-    results = await asyncio.gather(*coroutines)
+    results = await gather(*coroutines)
     return [r for r in results if r and r.text]
 
 
