@@ -30,17 +30,17 @@ paths:
       description: |
         Returns `text/event-stream`. The stream emits the following named
         events in order; clients should parse `event:` and JSON-decode `data:`.
+        The `data` payload of each event is described by the referenced schema.
 
-        | event             | data shape                                                |
-        |-------------------|-----------------------------------------------------------|
-        | search_started    | `{ "queries": string[] }`                                 |
-        | candidates_found  | `{ "items": SearchCandidate[] }`                          |
-        | retrieval_started | `{ "url": string, "title": string }`                      |
-        | passage_found     | `{ "url": string, "passage": string }`                    |
-        | passage_verdict   | `{ "label": Verdict, "reasoning": string, "url": string }`|
-        | final_verdict     | `{ "verdict": Verdict, "citations": Citation[] }`         |
-        | done              | `{}`                                                      |
-        | error             | Error                                                     |
+        | event            | data schema             |
+        |------------------|-------------------------|
+        | search_started   | `SearchStartedPayload`  |
+        | candidates_found | `CandidatesFoundPayload`|
+        | passage_found    | `PassageFoundPayload`   |
+        | passage_verdict  | `PassageVerdictPayload` |
+        | final_verdict    | `FinalVerdictPayload`   |
+        | done             | `{}`                    |
+        | error            | `Error`                 |
       requestBody:
         required: true
         content:
@@ -116,7 +116,6 @@ components:
       enum:
         - search_started
         - candidates_found
-        - retrieval_started
         - passage_found
         - passage_verdict
         - final_verdict
@@ -169,6 +168,51 @@ components:
         code:    { type: string }
         message: { type: string }
         details: { type: object, additionalProperties: true }
+
+    # --- SSE event payloads ---------------------------------------------------
+    # The `data` JSON of each named SSE event.
+    # These exist so both ends generate the wire shapes 
+    # Do not reuse them as internal pipeline state.
+    SearchStartedPayload:
+      type: object
+      required: [queries]
+      properties:
+        queries:
+          type: array
+          items: { type: string }
+
+    CandidatesFoundPayload:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SearchCandidate' }
+
+    PassageFoundPayload:
+      type: object
+      required: [url, title, passage]
+      properties:
+        url:     { type: string, format: uri }
+        title:   { type: string }
+        passage: { type: string }
+
+    PassageVerdictPayload:
+      type: object
+      required: [url, label, reasoning]
+      properties:
+        url:       { type: string, format: uri }
+        label:     { $ref: '#/components/schemas/Verdict' }
+        reasoning: { type: string }
+
+    FinalVerdictPayload:
+      type: object
+      required: [verdict, citations]
+      properties:
+        verdict:   { $ref: '#/components/schemas/Verdict' }
+        citations:
+          type: array
+          items: { $ref: '#/components/schemas/Citation' }
 
   responses:
     BadRequest:
