@@ -1,11 +1,11 @@
 import { Dispatch } from "redux";
 import client from "~/lib/client";
-import type { VerifyRequest, SseEventType } from "~/types/api";
+import type { VerifyRequest, SseEventType, HistoryItem } from "~/types/api";
+import type { SsePayloadMap } from "~/types/sse";
 
 export const WILL_CHECK_FACT     = "AGENT/WILL_CHECK_FACT" as const;
 export const SEARCH_STARTED      = "AGENT/SEARCH_STARTED" as const;
 export const CANDIDATES_FOUND    = "AGENT/CANDIDATES_FOUND" as const;
-export const RETRIEVAL_STARTED   = "AGENT/RETRIEVAL_STARTED" as const;
 export const PASSAGE_FOUND       = "AGENT/PASSAGE_FOUND" as const;
 export const PASSAGE_VERDICT     = "AGENT/PASSAGE_VERDICT" as const;
 export const FINAL_VERDICT       = "AGENT/FINAL_VERDICT" as const;
@@ -18,13 +18,30 @@ export const GET_HISTORY_FAILURE = "AGENT/GET_HISTORY_FAILURE" as const;
 const SSE_TO_ACTION: Record<SseEventType, string> = {
   search_started:    SEARCH_STARTED,
   candidates_found:  CANDIDATES_FOUND,
-  retrieval_started: RETRIEVAL_STARTED,
   passage_found:     PASSAGE_FOUND,
   passage_verdict:   PASSAGE_VERDICT,
   final_verdict:     FINAL_VERDICT,
   done:              STREAM_DONE,
   error:             STREAM_ERROR,
 };
+
+/**
+ * Every action the factcheck reducer handles, as a discriminated union on
+ * `type`. The SSE-driven variants carry payloads generated from the OpenAPI
+ * spec (via SsePayloadMap), so the reducer narrows action.data per event.
+ */
+export type FactcheckAction =
+  | { type: typeof WILL_CHECK_FACT; claim: string }
+  | { type: typeof SEARCH_STARTED; data: SsePayloadMap["search_started"] }
+  | { type: typeof CANDIDATES_FOUND; data: SsePayloadMap["candidates_found"] }
+  | { type: typeof PASSAGE_FOUND; data: SsePayloadMap["passage_found"] }
+  | { type: typeof PASSAGE_VERDICT; data: SsePayloadMap["passage_verdict"] }
+  | { type: typeof FINAL_VERDICT; data: SsePayloadMap["final_verdict"] }
+  | { type: typeof STREAM_DONE }
+  | { type: typeof STREAM_ERROR; data: { message: string } }
+  | { type: typeof WILL_GET_HISTORY }
+  | { type: typeof GET_HISTORY_SUCCESS; data: HistoryItem[] }
+  | { type: typeof GET_HISTORY_FAILURE; data: { message: string } };
 
 export const checkFact = ({ claim, prefer_source = "auto" }: VerifyRequest) => {
   return async (dispatch: Dispatch): Promise<void> => {

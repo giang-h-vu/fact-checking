@@ -1,10 +1,11 @@
-import { AnyAction } from "redux";
+import type { Reducer } from "@reduxjs/toolkit";
 import type { FactcheckState, Progress } from "~/types/domain";
 import {
-  WILL_CHECK_FACT, SEARCH_STARTED, CANDIDATES_FOUND, RETRIEVAL_STARTED,
+  WILL_CHECK_FACT, SEARCH_STARTED, CANDIDATES_FOUND,
   PASSAGE_FOUND, PASSAGE_VERDICT, FINAL_VERDICT, STREAM_DONE, STREAM_ERROR,
   WILL_GET_HISTORY, GET_HISTORY_SUCCESS, GET_HISTORY_FAILURE,
 } from "~/store/actions/factcheckActions";
+import type { FactcheckAction } from "~/store/actions/factcheckActions";
 
 export type { FactcheckState };
 
@@ -25,7 +26,10 @@ const initState: FactcheckState = {
   error: null,
 };
 
-const factcheckReducer = (state: FactcheckState = initState, action: AnyAction): FactcheckState => {
+const factcheckReducer = (
+  state: FactcheckState = initState, 
+  action: FactcheckAction
+): FactcheckState => {
   switch (action.type) {
     case WILL_CHECK_FACT:
       return { ...state, claim: action.claim, fetchingAnswer: true, progress: emptyProgress(), verdict: "", citations: [], error: null };
@@ -33,8 +37,6 @@ const factcheckReducer = (state: FactcheckState = initState, action: AnyAction):
       return { ...state, progress: { ...state.progress, queries: action.data.queries ?? [] } };
     case CANDIDATES_FOUND:
       return { ...state, progress: { ...state.progress, candidates: action.data.items ?? [] } };
-    case RETRIEVAL_STARTED:
-      return state;
     case PASSAGE_FOUND:
       return { ...state, progress: { ...state.progress, passages: [...state.progress.passages, action.data] } };
     case PASSAGE_VERDICT:
@@ -56,4 +58,7 @@ const factcheckReducer = (state: FactcheckState = initState, action: AnyAction):
   }
 };
 
-export default factcheckReducer;
+// The body narrows action via FactcheckAction, but RTK's combineReducers
+// requires reducers to accept UnknownAction — cast at the boundary so the
+// inferred RootState stays FactcheckState rather than collapsing to never.
+export default factcheckReducer as Reducer<FactcheckState>;

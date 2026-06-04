@@ -1,16 +1,9 @@
+import type { components } from "~/api";
 import type { Verdict, Citation, SearchCandidate, HistoryItem } from "~/types/api";
 
-export interface Passage {
-  url: string;
-  title?: string;
-  passage: string;
-}
-
-export interface PassageVerdict {
-  url: string;
-  label: Verdict;
-  reasoning: string;
-}
+// Generated from api/openapi.yaml — the SSE passage_found / passage_verdict shapes.
+export type Passage = components["schemas"]["PassageFoundPayload"];
+export type PassageVerdict = components["schemas"]["PassageVerdictPayload"];
 
 export interface Progress {
   queries: string[];
