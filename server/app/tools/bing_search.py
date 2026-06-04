@@ -1,4 +1,5 @@
 """Bing Web Search v7 wrapped as a LangChain tool."""
+
 from __future__ import annotations
 
 import httpx
@@ -38,10 +39,7 @@ def _search(query: str, count: int) -> list[SearchHit]:
     pages = response.json().get("webPages", {}).get("value", [])
     return [
         SearchHit(
-            url=p["url"], 
-            title=p.get("name", ""), 
-            snippet=p.get("snippet", ""), 
-            source="bing"
+            url=p["url"], title=p.get("name", ""), snippet=p.get("snippet", ""), source="bing"
         )
         for p in pages
     ]

@@ -12,9 +12,11 @@ from app.api import verify as verify_handler
 
 # Initializing database at app startup.
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.platform.db.session import init_db
+
     await init_db()
     yield
 

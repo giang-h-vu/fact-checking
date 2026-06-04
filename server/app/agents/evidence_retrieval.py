@@ -6,6 +6,7 @@ Two stages:
      relevant to the claim. We send chunked text rather than the whole page
      to keep the prompt small.
 """
+
 from __future__ import annotations
 
 import logging
@@ -43,6 +44,7 @@ class PassageExtraction(BaseModel):
 
 PAGE_CHAR_LIMIT = 10000  # keep prompt manageable for small local models
 
+
 async def _fetch_one(url: str, sem: Semaphore) -> FetchedPage | None:
     async with sem:
         try:
@@ -64,8 +66,10 @@ def _extract_passage(claim: str, page: FetchedPage) -> str | None:
     article = page.text[:PAGE_CHAR_LIMIT]
     prompt = PASSAGE_PROMPT.format(claim=claim, article=article)
     try:
-        result = get_llm().with_structured_output(PassageExtraction).invoke(
-            [SystemMessage(content=SYSTEM), HumanMessage(content=prompt)]
+        result = (
+            get_llm()
+            .with_structured_output(PassageExtraction)
+            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
         )
         if not isinstance(result, PassageExtraction):
             raise TypeError(f"Unexpected structured output type: {type(result)}")

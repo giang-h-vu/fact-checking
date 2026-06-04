@@ -1,5 +1,5 @@
-"""Fetch a URL and extract clean main text.
-"""
+"""Fetch a URL and extract clean main text."""
+
 from __future__ import annotations
 
 import httpx
@@ -11,9 +11,7 @@ from app.platform.config import get_settings
 from app.tools.sources import FetchedPage
 
 DEFAULT_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (compatible; fact-checking-tool/1.0;"
-    ),
+    "User-Agent": ("Mozilla/5.0 (compatible; fact-checking-tool/1.0;"),
 }
 
 
@@ -39,12 +37,15 @@ async def fetch_url(url: str) -> FetchedPage:
     {url, title, text}; `text` may be empty if the page wasn't extractable
     """
     html = await _fetch_html(url)
-    extracted = trafilatura.extract(
-        html,
-        include_comments=False,
-        include_tables=False,
-        favor_recall=True,
-    ) or ""
+    extracted = (
+        trafilatura.extract(
+            html,
+            include_comments=False,
+            include_tables=False,
+            favor_recall=True,
+        )
+        or ""
+    )
     metadata = trafilatura.extract_metadata(html)
     title = (metadata.title if metadata and metadata.title else "") or ""
 

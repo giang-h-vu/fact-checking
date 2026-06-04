@@ -5,6 +5,7 @@ strict {SUPPORTED, REFUTED, NOT_ENOUGH_INFO} label plus a one-sentence
 reason. Final verdict = majority vote, with NOT_ENOUGH_INFO as the
 tie-breaker (matches the original NLI vote logic).
 """
+
 from __future__ import annotations
 
 import logging
@@ -37,15 +38,17 @@ class JudgeOutput(BaseModel):
 def _judge(claim: str, passage: str) -> tuple[Verdict, str]:
     prompt = PASSAGE_PROMPT.format(claim=claim, passage=passage)
     try:
-        result = get_llm().with_structured_output(JudgeOutput).invoke(
-            [SystemMessage(content=SYSTEM), HumanMessage(content=prompt)]
+        result = (
+            get_llm()
+            .with_structured_output(JudgeOutput)
+            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
         )
         if not isinstance(result, JudgeOutput):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
     except Exception:
         log.warning("Judge structured output failed for passage; defaulting to NOT_ENOUGH_INFO")
         return Verdict.NOT_ENOUGH_INFO, "Judge response malformed"
-    
+
     return result.label, result.reasoning
 
 
@@ -68,11 +71,7 @@ def claim_verification_agent(state: FactCheckState) -> VerificationOutput:
         label, reasoning = _judge(state.claim, ev.text)
         passage_verdicts.append(
             PassageVerdict(
-                url=ev.url,
-                title=ev.title,
-                passage=ev.text,
-                label=label,
-                reasoning=reasoning
+                url=ev.url, title=ev.title, passage=ev.text, label=label, reasoning=reasoning
             )
         )
 
@@ -86,8 +85,10 @@ def claim_verification_agent(state: FactCheckState) -> VerificationOutput:
                     title=v.title,
                     passage=v.passage,
                     label=v.label,
-                    reasoning=v.reasoning
+                    reasoning=v.reasoning,
                 )
             )
     log.info("Final verdict: %s (from %d passages)", final, len(passage_verdicts))
-    return VerificationOutput(passage_verdicts=passage_verdicts, final_verdict=final, citations=citations)
+    return VerificationOutput(
+        passage_verdicts=passage_verdicts, final_verdict=final, citations=citations
+    )

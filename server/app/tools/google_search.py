@@ -1,5 +1,5 @@
-"""Google Custom Search wrapped as a LangChain tool.
-"""
+"""Google Custom Search wrapped as a LangChain tool."""
+
 from __future__ import annotations
 
 from googleapiclient.discovery import build
@@ -37,10 +37,10 @@ def _search(query: str, count: int) -> list[SearchHit]:
     items = response.get("items") or []
     return [
         SearchHit(
-            url=item["link"], 
-            title=item.get("title", ""), 
-            snippet=item.get("snippet", ""), 
-            source="google"
+            url=item["link"],
+            title=item.get("title", ""),
+            snippet=item.get("snippet", ""),
+            source="google",
         )
         for item in items
     ]

@@ -7,6 +7,7 @@ Asks the LLM to:
 
 Then dispatches each query × engine in Python (deterministic, easy to retry).
 """
+
 from __future__ import annotations
 
 import logging
@@ -54,8 +55,10 @@ def _plan(claim: str, prefer_source: str) -> tuple[list[str], list[SearchSource]
         "Pick engines only from the available list."
     )
     try:
-        result = get_llm().with_structured_output(SearchPlan).invoke(
-            [SystemMessage(content=SYSTEM), HumanMessage(content=user)]
+        result = (
+            get_llm()
+            .with_structured_output(SearchPlan)
+            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=user)])
         )
         if not isinstance(result, SearchPlan):
             raise TypeError(f"Unexpected structured output type: {type(result)}")

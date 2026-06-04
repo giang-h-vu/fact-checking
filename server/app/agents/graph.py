@@ -30,11 +30,13 @@ MAX_RETRIES = 2
 HTTP request re-uses the same compiled instance.
 """
 
+
 class GraphNode(str, Enum):
     SEARCH = "search"
     RETRIEVE = "retrieve"
     VERIFY = "verify"
     RETRY = "bump_retries"
+
 
 def _route_after_retrieval(state: FactCheckState) -> Literal[GraphNode.SEARCH, GraphNode.VERIFY]:
     if not state.evidence and state.retries < MAX_RETRIES:

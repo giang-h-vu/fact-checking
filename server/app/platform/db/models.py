@@ -4,6 +4,7 @@ Two tables: SearchRequest (one per claim) and Citation (one per supporting/
 refuting passage). No ORM relationship — citations are queried by FK
 explicitly to keep things easy to reason about under async.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

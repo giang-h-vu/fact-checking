@@ -11,16 +11,16 @@ from pydantic import AnyUrl, BaseModel, Field
 
 
 class PreferSource(Enum):
-    auto = 'auto'
-    wiki = 'wiki'
-    web = 'web'
+    auto = "auto"
+    wiki = "wiki"
+    web = "web"
 
 
 class VerifyRequest(BaseModel):
     claim: Annotated[
         str,
         Field(
-            description='The natural-language statement to verify',
+            description="The natural-language statement to verify",
             max_length=1000,
             min_length=1,
         ),
@@ -28,31 +28,31 @@ class VerifyRequest(BaseModel):
     prefer_source: Annotated[
         Optional[PreferSource],
         Field(
-            description='Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto.'
+            description="Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto."
         ),
     ] = None
 
 
 class Verdict(Enum):
-    SUPPORTED = 'SUPPORTED'
-    REFUTED = 'REFUTED'
-    NOT_ENOUGH_INFO = 'NOT_ENOUGH_INFO'
+    SUPPORTED = "SUPPORTED"
+    REFUTED = "REFUTED"
+    NOT_ENOUGH_INFO = "NOT_ENOUGH_INFO"
 
 
 class SseEventType(Enum):
-    search_started = 'search_started'
-    candidates_found = 'candidates_found'
-    passage_found = 'passage_found'
-    passage_verdict = 'passage_verdict'
-    final_verdict = 'final_verdict'
-    done = 'done'
-    error = 'error'
+    search_started = "search_started"
+    candidates_found = "candidates_found"
+    passage_found = "passage_found"
+    passage_verdict = "passage_verdict"
+    final_verdict = "final_verdict"
+    done = "done"
+    error = "error"
 
 
 class Source(Enum):
-    google = 'google'
-    bing = 'bing'
-    wikipedia = 'wikipedia'
+    google = "google"
+    bing = "bing"
+    wikipedia = "wikipedia"
 
 
 class SearchCandidate(BaseModel):

@@ -6,6 +6,7 @@ state updates into the named SSE events documented in /api/openapi.yaml.
 On the final verdict we persist a SearchRequest + Citations row so
 GET /api/v1/history can show past runs.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,15 +55,25 @@ EVENT_PAYLOAD: dict[SseEventType, type[BaseModel] | None] = {
 
 
 @overload
-def sse(event: Literal[SseEventType.search_started], data: SearchStartedPayload) -> dict[str, str]: ...
+def sse(
+    event: Literal[SseEventType.search_started], data: SearchStartedPayload
+) -> dict[str, str]: ...
 @overload
-def sse(event: Literal[SseEventType.candidates_found], data: CandidatesFoundPayload) -> dict[str, str]: ...
+def sse(
+    event: Literal[SseEventType.candidates_found], data: CandidatesFoundPayload
+) -> dict[str, str]: ...
 @overload
-def sse(event: Literal[SseEventType.passage_found], data: PassageFoundPayload) -> dict[str, str]: ...
+def sse(
+    event: Literal[SseEventType.passage_found], data: PassageFoundPayload
+) -> dict[str, str]: ...
 @overload
-def sse(event: Literal[SseEventType.passage_verdict], data: PassageVerdictPayload) -> dict[str, str]: ...
+def sse(
+    event: Literal[SseEventType.passage_verdict], data: PassageVerdictPayload
+) -> dict[str, str]: ...
 @overload
-def sse(event: Literal[SseEventType.final_verdict], data: FinalVerdictPayload) -> dict[str, str]: ...
+def sse(
+    event: Literal[SseEventType.final_verdict], data: FinalVerdictPayload
+) -> dict[str, str]: ...
 @overload
 def sse(event: Literal[SseEventType.error], data: Error) -> dict[str, str]: ...
 @overload
@@ -80,8 +91,9 @@ def sse(event: SseEventType, data: BaseModel | None = None) -> dict[str, str]:
         "data": json.dumps(data.model_dump(mode="json") if data else {}, ensure_ascii=False),
     }
 
+
 async def _persist(state: FactCheckState) -> None:
-    async with session_scope() as session: 
+    async with session_scope() as session:
         request = SearchRequest(
             claim=state.claim,
             verdict=state.final_verdict or Verdict.NOT_ENOUGH_INFO,
@@ -117,7 +129,10 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
             for node, delta in update.items():
                 if node == GraphNode.SEARCH:
                     search = SearchOutput.model_validate(delta)
-                    yield sse(SseEventType.search_started, SearchStartedPayload(queries=search.search_queries))
+                    yield sse(
+                        SseEventType.search_started,
+                        SearchStartedPayload(queries=search.search_queries),
+                    )
                     # candidates are internal SearchHit; the wire shape is SearchCandidate
                     yield sse(
                         SseEventType.candidates_found,
@@ -148,13 +163,15 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
                         FinalVerdictPayload.model_validate(
                             {
                                 "verdict": verification.final_verdict or Verdict.NOT_ENOUGH_INFO,
-                                "citations": [c.model_dump(mode="json") for c in verification.citations],
+                                "citations": [
+                                    c.model_dump(mode="json") for c in verification.citations
+                                ],
                             }
                         ),
                     )
         if verification is not None:
             await _persist(initial.model_copy(update=verification.model_dump()))
-            
+
         yield sse(SseEventType.done)
 
     except Exception as e:
@@ -163,6 +180,7 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
 
 
 router = APIRouter(tags=["verify"])
+
 
 @router.post("/api/v1/verify")
 async def stream_verify(body: VerifyRequest) -> EventSourceResponse:

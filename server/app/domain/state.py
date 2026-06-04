@@ -3,6 +3,7 @@ Distinct from the API-facing models in app/generated/models.py: this is the
 internal pipeline state, not part of the public contract. Keep it append-only
 where possible so each agent step sees what previous agent step produced.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -37,6 +38,7 @@ class Citation(BaseModel):
     label: Verdict
     reasoning: str = ""
 
+
 class SearchOutput(BaseModel):
     search_queries: list[str] = []
     candidates: list[SearchHit] = []
@@ -50,6 +52,7 @@ class VerificationOutput(BaseModel):
     passage_verdicts: list[PassageVerdict] = []
     final_verdict: Verdict | None = None
     citations: list[Citation] = []
+
 
 class FactCheckState(SearchOutput, RetrievalOutput, VerificationOutput):
     # Input

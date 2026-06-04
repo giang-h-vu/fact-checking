@@ -4,6 +4,7 @@ Centralised so the model name + temperature are configured in one place. The
 agents always go through `get_llm()` rather than instantiating ChatOllama
 directly — this lets the smoke test swap in a fake without touching agent code.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

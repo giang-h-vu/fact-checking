@@ -3,6 +3,7 @@
 SQLite by default (works zero-config); swap by setting DATABASE_URL to a
 postgres+asyncpg / mysql+aiomysql URL.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -22,9 +23,7 @@ def _engine():
 
 @lru_cache
 def _sessionmaker():
-    return async_sessionmaker(_engine(), class_=AsyncSession,
-        expire_on_commit=False
-    )
+    return async_sessionmaker(_engine(), class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db() -> None:

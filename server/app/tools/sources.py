@@ -1,4 +1,5 @@
 """Search source types — shared by tool implementations and agents."""
+
 from __future__ import annotations
 
 from typing import Literal

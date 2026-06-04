@@ -4,6 +4,7 @@ Each public symbol here is a `@tool`-decorated callable that the LLM can
 invoke by name. Keep tool docstrings short and unambiguous — the LLM reads
 them as the tool's API contract.
 """
+
 from langchain_core.tools import BaseTool
 
 from app.tools.bing_search import bing_search
