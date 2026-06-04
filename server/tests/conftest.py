@@ -1,4 +1,5 @@
 import pytest
+
 from app.platform.config import get_settings
 from app.platform.db.session import _engine, _sessionmaker
 

@@ -19,13 +19,6 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.agents.graph import GraphNode, build_graph
-from app.domain.state import (
-    FactCheckState,
-    RetrievalOutput,
-    SearchOutput,
-    Verdict,
-    VerificationOutput,
-)
 from app.api.generated.models import (
     CandidatesFoundPayload,
     Error,
@@ -35,6 +28,13 @@ from app.api.generated.models import (
     SearchStartedPayload,
     SseEventType,
     VerifyRequest,
+)
+from app.domain.state import (
+    FactCheckState,
+    RetrievalOutput,
+    SearchOutput,
+    Verdict,
+    VerificationOutput,
 )
 from app.platform.db.models import Citation, SearchRequest
 from app.platform.db.session import session_scope

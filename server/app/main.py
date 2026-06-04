@@ -5,10 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.platform.config import get_settings
 from app.api import history as history_handler
 from app.api import verify as verify_handler
-
+from app.platform.config import get_settings
 
 # Initializing database at app startup.
 

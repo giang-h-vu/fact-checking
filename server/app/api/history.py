@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Annotated, TypeVar
+
 from fastapi import APIRouter, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import Select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
-
-from app.platform.db.models import Citation, SearchRequest
-from app.platform.db.session import session_scope
 from app.api.generated.models import (
     Citation as ApiCitation,
 )
@@ -19,6 +18,8 @@ from app.api.generated.models import (
     HistoryResponse,
     Verdict,
 )
+from app.platform.db.models import Citation, SearchRequest
+from app.platform.db.session import session_scope
 
 T = TypeVar("T")
 

@@ -10,9 +10,9 @@ Two stages:
 from __future__ import annotations
 
 import logging
+from asyncio import Semaphore, gather
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from asyncio import Semaphore, gather
 from pydantic import BaseModel
 
 from app.domain.state import FactCheckState, RetrievalOutput

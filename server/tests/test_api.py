@@ -7,22 +7,21 @@ Cover the deterministic surface here (history + validation)
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
-import pytest
-import json
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.platform.config import get_settings
-from app.main import create_app
 from app.api.generated.models import (
     FinalVerdictPayload,
+    SearchStartedPayload,
     SseEventType,
     Verdict,
-    SearchStartedPayload,
 )
-from app.api.verify import sse, EVENT_PAYLOAD
+from app.api.verify import EVENT_PAYLOAD, sse
+from app.main import create_app
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime as datetime_aliased
 from enum import Enum
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any
 
 from pydantic import AnyUrl, BaseModel, Field
 
@@ -26,7 +26,7 @@ class VerifyRequest(BaseModel):
         ),
     ]
     prefer_source: Annotated[
-        Optional[PreferSource],
+        PreferSource | None,
         Field(
             description="Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto."
         ),
@@ -58,7 +58,7 @@ class Source(Enum):
 class SearchCandidate(BaseModel):
     url: AnyUrl
     title: str
-    snippet: Optional[str] = None
+    snippet: str | None = None
     source: Source
 
 
@@ -67,7 +67,7 @@ class Citation(BaseModel):
     title: str
     passage: str
     label: Verdict
-    reasoning: Optional[str] = None
+    reasoning: str | None = None
 
 
 class HistoryItem(BaseModel):
@@ -75,25 +75,25 @@ class HistoryItem(BaseModel):
     claim: str
     datetime: datetime_aliased
     verdict: Verdict
-    citations: Optional[List[Citation]] = None
+    citations: list[Citation] | None = None
 
 
 class HistoryResponse(BaseModel):
-    items: List[HistoryItem]
+    items: list[HistoryItem]
 
 
 class Error(BaseModel):
     code: str
     message: str
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
 
 class SearchStartedPayload(BaseModel):
-    queries: List[str]
+    queries: list[str]
 
 
 class CandidatesFoundPayload(BaseModel):
-    items: List[SearchCandidate]
+    items: list[SearchCandidate]
 
 
 class PassageFoundPayload(BaseModel):
@@ -110,4 +110,4 @@ class PassageVerdictPayload(BaseModel):
 
 class FinalVerdictPayload(BaseModel):
     verdict: Verdict
-    citations: List[Citation]
+    citations: list[Citation]
