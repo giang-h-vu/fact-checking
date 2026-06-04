@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 from asyncio import Semaphore, gather
+from typing import cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
@@ -48,7 +49,7 @@ PAGE_CHAR_LIMIT = 10000  # keep prompt manageable for small local models
 async def _fetch_one(url: str, sem: Semaphore) -> FetchedPage | None:
     async with sem:
         try:
-            return await fetch_url.ainvoke({"url": url})
+            return cast(FetchedPage, await fetch_url.ainvoke({"url": url}))
         except Exception as e:
             log.warning("Fetch failed for %s: %s", url, e)
             return None

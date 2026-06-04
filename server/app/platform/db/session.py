@@ -10,19 +10,24 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlmodel import SQLModel
 
 from app.platform.config import get_settings
 
 
 @lru_cache
-def _engine():
+def _engine() -> AsyncEngine:
     return create_async_engine(get_settings().database_url, echo=False)
 
 
 @lru_cache
-def _sessionmaker():
+def _sessionmaker() -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(_engine(), class_=AsyncSession, expire_on_commit=False)
 
 

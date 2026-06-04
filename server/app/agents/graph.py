@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import Literal
 
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from app.agents.claim_verification import claim_verification_agent
 from app.agents.document_search import document_search_agent
@@ -51,7 +52,7 @@ def _bump_retries(state: FactCheckState) -> FactCheckState:
 
 
 @lru_cache
-def build_graph():
+def build_graph() -> CompiledStateGraph:
     g = StateGraph(FactCheckState)
     g.add_node(GraphNode.SEARCH, document_search_agent)
     g.add_node(GraphNode.RETRIEVE, evidence_retrieval_agent)
