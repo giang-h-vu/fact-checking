@@ -17,8 +17,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
-    # Comment the deploy block out if you don't have nvidia-container-toolkit.
-    # Ollama falls back to CPU automatically; expect much slower inference.
+    # Comment the deploy block out if nvidia-container-toolkit is not available.
+    # Ollama falls back to CPU automatically; slower inference.
     deploy:
       resources:
         reservations:
@@ -65,7 +65,7 @@ services:
       ollama-pull:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/history || exit 1"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/history')"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -84,5 +84,5 @@ services:
         condition: service_healthy
 
 volumes:
-  ollama_data:   # persists downloaded models (~5–40 GB depending on model)
+  ollama_data:   # persists downloaded models
   server_data:   # persists the SQLite history database
