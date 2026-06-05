@@ -127,6 +127,8 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
     try:
         async for update in graph.astream(initial, stream_mode="updates"):
             for node, delta in update.items():
+                if delta is None:
+                    continue
                 if node == GraphNode.SEARCH:
                     search = SearchOutput.model_validate(delta)
                     yield sse(

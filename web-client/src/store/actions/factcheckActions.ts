@@ -1,4 +1,5 @@
 import { Dispatch } from "redux";
+import { EventSourceParserStream, type EventSourceMessage } from "eventsource-parser/stream";
 import client from "~/lib/client";
 import type { VerifyRequest, SseEventType, HistoryItem } from "~/types/api";
 import type { SsePayloadMap } from "~/types/sse";
@@ -63,25 +64,17 @@ export const checkFact = ({ claim, prefer_source = "auto" }: VerifyRequest) => {
       return;
     }
 
-    const reader = (stream as ReadableStream<Uint8Array>).getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
+    // Decode bytes → text → parsed SSE messages.
+    const events = (stream as ReadableStream<BufferSource>)
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new EventSourceParserStream());
 
+    const reader = events.getReader();
     try {
       while (true) {
         const { value, done } = await reader.read();
-        
-        if (done){
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-
-        let frameEnd: number;
-        while ((frameEnd = buffer.indexOf("\n\n")) !== -1) {
-          const frame = buffer.slice(0, frameEnd);
-          buffer = buffer.slice(frameEnd + 2);
-          dispatchFrame(dispatch, frame);
-        }
+        if (done) break;
+        dispatchEvent(dispatch, value);
       }
     } catch (e) {
       dispatch({ type: STREAM_ERROR, data: { message: (e as Error).message } });
@@ -89,20 +82,16 @@ export const checkFact = ({ claim, prefer_source = "auto" }: VerifyRequest) => {
   };
 };
 
-function dispatchFrame(dispatch: Dispatch, frame: string): void {
-  let event = "message";
-  const dataLines: string[] = [];
-  for (const line of frame.split("\n")) {
-    if (line.startsWith("event:")) event = line.slice(6).trim();
-    else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-  }
-  const actionType = SSE_TO_ACTION[event as SseEventType];
+function dispatchEvent(dispatch: Dispatch, message: EventSourceMessage): void {
+  // The parser leaves `event` undefined for unnamed messages.
+  // Server always names its events, so an unnamed one is ignored.
+  const actionType = message.event && SSE_TO_ACTION[message.event as SseEventType];
   if (!actionType) return;
 
   let data: unknown = null;
-  if (dataLines.length) {
-    try { data = JSON.parse(dataLines.join("\n")); }
-    catch { data = { raw: dataLines.join("\n") }; }
+  if (message.data) {
+    try { data = JSON.parse(message.data); }
+    catch { data = { raw: message.data }; }
   }
   dispatch({ type: actionType, data });
 }

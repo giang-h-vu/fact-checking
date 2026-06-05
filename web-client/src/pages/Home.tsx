@@ -9,10 +9,19 @@ import { CardBox, CitationBox, PassageText } from "~/components/styled";
 import { verdictColor } from "~/utils/verdict";
 
 export default function Home() {
-  const claim     = useSelector((state: RootState) => state.factcheck.claim);
-  const verdict   = useSelector((state: RootState) => state.factcheck.verdict);
-  const citations = useSelector((state: RootState) => state.factcheck.citations);
-  const error     = useSelector((state: RootState) => state.factcheck.error);
+  const claim          = useSelector((state: RootState) => state.factcheck.claim);
+  const verdict        = useSelector((state: RootState) => state.factcheck.verdict);
+  const citations      = useSelector((state: RootState) => state.factcheck.citations);
+  const error          = useSelector((state: RootState) => state.factcheck.error);
+  const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
+
+  const resultsRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!fetchingAnswer && (verdict || error)) {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [fetchingAnswer, verdict, error]);
 
   return (
     <div className="search-and-more">
@@ -27,7 +36,7 @@ export default function Home() {
           </Grid>
         )}
 
-        <Grid item xs={12}><AgentTimeline /></Grid>
+        <Grid item xs={12} ref={resultsRef}><AgentTimeline /></Grid>
 
         {verdict && (
           <Grid item xs={12}>
