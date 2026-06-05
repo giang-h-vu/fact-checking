@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   Grid, TextField, IconButton, InputAdornment, Button,
   FormControl, MenuItem, Select, InputLabel,
-  Collapse, Link as MuiLink,
+  Collapse, Box, Link as MuiLink,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -26,6 +26,8 @@ const AdvancedToggle = styled(MuiLink)(({ theme }) => ({
   marginLeft: theme.spacing(2),
   marginBottom: theme.spacing(3),
   cursor: "pointer",
+  transition: theme.transitions.create("color"),
+  "&:hover": { color: theme.palette.primary.dark },
 }));
 
 export default function SearchInput() {
@@ -53,7 +55,7 @@ export default function SearchInput() {
   return (
     <InputWrapper fullWidth variant="filled">
       <Grid container direction="row" alignItems="stretch" spacing={2}>
-        <Grid item xs={18}>
+        <Grid item xs={12}>
           <TextField
             label="Enter a claim to verify"
             type="search"
@@ -90,19 +92,21 @@ export default function SearchInput() {
 
         <Grid item xs={12}>
           <Collapse in={advancedOpen}>
-            <FormControl variant="outlined" size="small" style={{ minWidth: 220 }}>
-              <InputLabel id="prefer-source-label">Preferred source</InputLabel>
-              <Select
-                labelId="prefer-source-label"
-                value={preferSource}
-                onChange={(e) => setPreferSource(e.target.value as PreferSource)}
-                label="Preferred source"
-              >
-                <MenuItem value="auto">Auto (agent decides)</MenuItem>
-                <MenuItem value="wiki">Wikipedia</MenuItem>
-                <MenuItem value="web">Web (Google + Bing)</MenuItem>
-              </Select>
-            </FormControl>
+            <Box sx={{ pt: 1.5, pb: 0.5 }}>
+              <FormControl variant="outlined" size="small" sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+                <InputLabel id="prefer-source-label">Preferred source</InputLabel>
+                <Select
+                  labelId="prefer-source-label"
+                  value={preferSource}
+                  onChange={(e) => setPreferSource(e.target.value as PreferSource)}
+                  label="Preferred source"
+                >
+                  <MenuItem value="auto">Auto (agent decides)</MenuItem>
+                  <MenuItem value="wiki">Wikipedia</MenuItem>
+                  <MenuItem value="web">Web (Google + Bing)</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
           </Collapse>
         </Grid>
       </Grid>

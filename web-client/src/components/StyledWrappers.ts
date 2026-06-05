@@ -11,16 +11,16 @@ export const CitationBox = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(1),
 }));
 
-export const PassageText = styled(Typography)({
+export const PassageText = styled(Typography)(({ theme }) => ({
   fontStyle: "italic",
-  color: "#555",
-  marginTop: 4,
-});
+  color: theme.palette.text.secondary,
+  marginTop: theme.spacing(0.5),
+}));
 
-export const PassageSpan = styled("span")({
+export const PassageSpan = styled("span")(({ theme }) => ({
   fontStyle: "italic",
-  color: "#555",
-});
+  color: theme.palette.text.secondary,
+}));
 
 export const SectionDivider = styled(Divider)({
   marginTop: "2rem",

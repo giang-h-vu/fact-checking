@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Grid, Typography, Chip } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import type { RootState } from "~/store/reducers/rootReducer";
 import type { AppDispatch } from "~/store";
 import type { HistoryItem } from "~/types/api";
 import { getHistory } from "~/store/actions/factcheckActions";
-import { CardBox, CitationBox, PassageText, SectionDivider } from "~/components/styled";
-import { verdictColor } from "~/utils/verdict";
+import VerdictChip from "~/components/VerdictChip";
+import { CardBox, CitationBox, PassageText, SectionDivider } from "~/components/StyledWrappers";
+import { formatDateTime } from "~/utils/datetime";
 
 export default function History() {
   const dispatch     = useDispatch<AppDispatch>();
@@ -31,23 +32,16 @@ export default function History() {
           </Grid>
         )}
 
-        <div className="div-part">
+        <Grid item xs={12} className="previous-verifications">
           {claimHistory.map((item: HistoryItem, i: number) => (
             <CardBox key={item.id ?? i}>
-              <Typography variant="caption" color="textSecondary">{item.datetime}</Typography>
+              <Typography variant="caption" color="textSecondary">{formatDateTime(item.datetime)}</Typography>
               <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
-              <Chip
-                label={item.verdict}
-                style={{ backgroundColor: verdictColor(item.verdict), color: "white" }}
-              />
+              <VerdictChip verdict={item.verdict} />
 
               {(item.citations ?? []).map((c, j: number) => (
                 <CitationBox key={j} elevation={1}>
-                  <Chip
-                    label={c.label}
-                    size="small"
-                    style={{ backgroundColor: verdictColor(c.label), color: "white", marginRight: 8 }}
-                  />
+                  <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
                   <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
                   <PassageText>"{c.passage}"</PassageText>
                 </CitationBox>
@@ -56,7 +50,7 @@ export default function History() {
               <SectionDivider />
             </CardBox>
           ))}
-        </div>
+        </Grid>
       </Grid>
     </div>
   );

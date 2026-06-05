@@ -13,18 +13,17 @@ main {
 }
 
 .glass {
-  font-weight: 1 00;
-  background: white;
   background: linear-gradient(to top right, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
-  min-height: 80vh;
-  /* max-height: 80vh;*/
-  overflow-y: scroll; 
-  width: 80%;
+  min-height: 85vh;
+  overflow-y: auto;
+  /* Fill most of the screen on large displays (thin margins via 92%), but cap at
+     120rem so the shell stops growing on ultra-wide monitors */
+  width: min(92%, 120rem);
   border-radius: 1rem;
   backdrop-filter: blur(2rem);
   z-index: 2;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .dashboard {
@@ -32,11 +31,23 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
+  /* Pin the header to the top; the nav group centres itself in the leftover height
+     via its own auto margins. space-evenly would float the header down. */
+  justify-content: flex-start;
   text-align: center;
   background: linear-gradient(to left top, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.2));
-  border-radius: 1rem;
-  min-width: 32%;
+  /* Round only the left corners so the column sits flush against the content pane
+     now that it spans the full height. */
+  border-radius: 1rem 0 0 1rem;
+  /* rem-based min so the max-width is honoured — a percentage min that
+     exceeds the max would override it. */
+  min-width: 18rem;
+  max-width: 26rem;
+}
+
+
+.links {
+  margin: 0 0;
 }
 
 .app-name {
@@ -44,17 +55,17 @@ main {
   background: rgb(16, 161, 157);
   color: rgb(255, 255, 255);
   backdrop-filter: blur(1rem);
-  /* height: 80%; */
   padding: 1rem;
   font-size: 95%;
   font-weight: 500;
   text-decoration: none;
 }
 
+/* Fluid avatar: shrinks with the viewport, never below 8rem or above 15rem. */
 .app-name img {
   margin: 1rem;
-  width: 15rem;
-  height: 15rem;
+  width: clamp(8rem, 12vw, 15rem);
+  height: clamp(8rem, 12vw, 15rem);
   border-radius: 50%;
 }
 
@@ -62,9 +73,13 @@ main {
   margin-top: 0.5rem;
 }
 
+
 .link img {
   height: 2rem;
   filter: brightness(50%);
+  opacity: 0.7;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .link {
@@ -73,57 +88,93 @@ main {
   padding: 1rem 2rem;
   align-items: center;
   text-decoration: none;
+  /* Right side rounded corners, left size square with stripe */
+  border-radius: 0 0.75rem 0.75rem 0;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              background 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .link h2 {
   padding: 0rem 2rem;
   font-weight: 500;
   color: rgb(16, 161, 157);
+  transition: color 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* HOVER: warm sand wash, slides toward the reader and
+   lifts on a soft grey shadow.*/
 .link:hover {
   background: linear-gradient(to left top, rgba(242, 222, 186, 0.8), rgba(255, 239, 214, 0.2));
   transform: translateX(-1rem);
   box-shadow: 6px 6px 20px rgba(122, 122, 122, 0.2);
 }
 
-.link.active {
-  background: linear-gradient(to left top, rgba(242, 222, 186, 0.8), rgba(255, 239, 214, 0.2));
-  transform: translateX(-1rem);
-  box-shadow: none;
+.link:hover img {
+  opacity: 1;
 }
 
+/* ACTIVE: cool teal wash in the brand color, anchored flush with an inset teal accent bar. */
+.link.active {
+  background: linear-gradient(to left top, rgba(16, 161, 157, 0.22), rgba(16, 161, 157, 0.06));
+  transform: none;
+  box-shadow: inset 4px 0 0 0 rgb(16, 161, 157);
+}
+
+.link.active h2 {
+  color: rgb(11, 122, 119);
+  font-weight: 600;
+}
+
+.link.active img {
+  opacity: 1;
+  filter: brightness(40%);
+}
+
+/* Hovering the current page keeps it anchored; it only deepens the
+  teal and layers a tinted lift shadow over the accent bar. Specificity (0,3,0)
+  beats both rules above, so this wins cleanly when both states apply. */
+.link.active:hover {
+  background: linear-gradient(to left top, rgba(16, 161, 157, 0.3), rgba(16, 161, 157, 0.1));
+  transform: none;
+  box-shadow: inset 4px 0 0 0 rgb(16, 161, 157),
+              6px 6px 20px rgba(16, 161, 157, 0.18);
+}
 
 .search-and-more {
   display: flex;
   flex: 2 1;
-  margin: 5rem;
-  margin-bottom: 1rem;
-  align-items: center;
-  justify-content: flex-start;
   flex-direction: column;
-  align-content: flex-start;
-  flex-wrap: wrap;
-}
-.div-part{
-  max-height: 60vh;
-  overflow-y: scroll;
-  overflow: -moz-scrollbars-vertical;
-  overflow-x: hidden
-}
-
-.searchInput {
-  width: 32rem;
-  padding: 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  height: 3rem;
-  font-size: 100%;
-  font-weight: 600;
+  /* stretch lets the search box / results fill the column instead of
+     shrinking and stranding the wider pane in whitespace. */
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 80rem;
+  margin: clamp(1.5rem, 3vw, 3rem) auto 1rem;
 }
 
-.searchInput:focus {
-  outline: none;
+/* History cards in a grid: columns sized to a decent width (~18rem; auto-fill).
+  The grid scrolls internally once the cards overflow its height. */
+.previous-verifications {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  /* Tracks the 85vh card minus the heading + margins above. */
+  max-height: calc(85vh - 8rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* CardBox carries its own marginBottom; zero it inside the grid so `gap` is the
+   single, uniform source of spacing in both axes. */
+.previous-verifications > * {
+  margin-bottom: 0;
+}
+
+/* Long titles/URLs wrap instead of overflowing the narrower columns. */
+.previous-verifications a {
+  overflow-wrap: anywhere;
 }
 
 .circle1,
@@ -145,50 +196,21 @@ main {
   bottom: 2%;
 }
 
-#filtersubmit {
-  position: relative;
-  z-index: 1;
-  left: -25px;
-  top: 1px;
-  color: #7b7b7b;
-  cursor: pointer;
-  width: 0;
-}
+/* Below MUI's `md` breakpoint (900px) the sidebar + content stack vertically
+   and the decorative circles are hidden so they can't overflow the viewport. */
+@media (max-width: 900px) {
+  .glass {
+    flex-direction: column;
+    align-items: stretch;
+    width: 92%;
+  }
 
-#filtersubmit:hover {
-  color: purple;
-}
+  .dashboard {
+    min-width: 100%;
+  }
 
-.search-type {
-  display: inline-flex;
-  /* overflow: hidden; */
-  border-radius: none;
-  box-shadow: 0 0 5px rgba(0, 0, 0 , 0.5);
-  position: absolute;
-  top: 6.5%;
-  right: 10.5%;
-}
-
-.radio__input {
-  display: none;
-}
-
-.radio__label {
-  padding: 8px 15px;
-  font-size: 14px;
-  letter-spacing: 0.06rem;
-  color: #ffffff;
-  background: #009578;
-  cursor: pointer;
-  transition: 0.1s;
-  font-weight: 600;
-}
-
-.radio__label:not(:last-of-type) {
-  border-right: 1px solid #006b56;
-
-}
-
-.radio__input:checked + .radio__label {
-  background: #006b56;
+  .circle1,
+  .circle2 {
+    display: none;
+  }
 }

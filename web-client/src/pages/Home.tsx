@@ -1,12 +1,13 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Grid, Typography, Chip } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import type { RootState } from "~/store/reducers/rootReducer";
 import type { Citation } from "~/types/api";
 import SearchInput from "~/components/SearchInput";
 import AgentTimeline from "~/components/AgentTimeline";
-import { CardBox, CitationBox, PassageText } from "~/components/styled";
-import { verdictColor } from "~/utils/verdict";
+import VerdictChip from "~/components/VerdictChip";
+import { CardBox, CitationBox, PassageText } from "~/components/StyledWrappers";
+import { verdictLabel } from "~/utils/verdict";
 
 export default function Home() {
   const claim          = useSelector((state: RootState) => state.factcheck.claim);
@@ -43,10 +44,7 @@ export default function Home() {
             <CardBox>
               <Typography variant="subtitle2" color="textSecondary">Claim</Typography>
               <Typography variant="body1" gutterBottom>"{claim}"</Typography>
-              <Chip
-                label={`Verdict: ${verdict}`}
-                style={{ backgroundColor: verdictColor(verdict), color: "white", fontSize: 16 }}
-              />
+              <VerdictChip verdict={verdict} label={`Verdict: ${verdictLabel(verdict)}`} sx={{ fontSize: "1rem" }} />
             </CardBox>
 
             {citations.length > 0 && (
@@ -54,11 +52,7 @@ export default function Home() {
                 <Typography variant="h6" sx={{ ml: "6px" }}>Citations</Typography>
                 {citations.map((c: Citation, i: number) => (
                   <CitationBox key={i}>
-                    <Chip
-                      label={c.label}
-                      size="small"
-                      style={{ backgroundColor: verdictColor(c.label), color: "white", marginRight: 8 }}
-                    />
+                    <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
                     <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
                     <PassageText>"{c.passage}"</PassageText>
                     {c.reasoning && (
