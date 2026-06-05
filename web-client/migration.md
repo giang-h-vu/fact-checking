@@ -78,9 +78,8 @@ Scope: Migrate CRA to Vite, keep JS, keep React Router v5, keep Jest, move asset
 
 # Post-Migration Improvements (Optional)
 
-- [ ] Upgrade React Router v5 → v6 (separate pass).
-- [X] Switch Jest → Vitest for faster tests. 
-- [ ] 3 Add ESLint config independent of CRA.
-- [ ] 4 Add build-time env variants (`.env.development`, `.env.production`).
-- [ ] 5 Add `@mui/icons-material` where needed and update imports.
-- [ ] 6 Add Vite aliases (e.g., `@/` → `src/`) to simplify imports.
+- [ ] 1.Upgrade React Router v5 → v6 (separate pass).
+- [X] 2. Switch Jest → Vitest for faster tests. 
+- [ ] 3. Add ESLint config independent of CRA.
+- [X] 4. Add `@mui/icons-material` where needed and update imports.
+- [X] 5. Add Vite aliases (e.g., `@/` → `src/`) to simplify imports.
