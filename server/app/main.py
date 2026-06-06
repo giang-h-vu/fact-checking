@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -10,9 +11,13 @@ from app.api import history as history_handler
 from app.api import verify as verify_handler
 from app.platform.config import get_settings
 
+
+# TODO: Set this only in development, or use a more sophisticated logging config
+logging.basicConfig(level=logging.INFO)
+
+
+
 # Initializing database at app startup.
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from app.platform.db.session import init_db

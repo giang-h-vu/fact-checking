@@ -6,8 +6,9 @@ where possible so each agent step sees what previous agent step produced.
 
 from __future__ import annotations
 
+import operator
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel
 
@@ -62,3 +63,8 @@ class FactCheckState(SearchOutput, RetrievalOutput, VerificationOutput):
     # Loop control
     retries: int = 0
     error: str | None = None
+
+    # Override SearchOutput.search_queries with an append reducer so the planner 
+    # reads the full history and avoids repeats.
+    # NOTE node return = this attempt; state value = all attempts.
+    search_queries: Annotated[list[str], operator.add] = []

@@ -46,14 +46,22 @@ def _available_engines() -> list[SearchSource]:
     return out
 
 
-def _plan(claim: str, prefer_source: str) -> tuple[list[str], list[SearchSource]]:
+def _plan(
+    claim: str, prefer_source: str, tried: list[str]
+) -> tuple[list[str], list[SearchSource]]:
     available_engines = _available_engines()
     user = (
         f"Claim: {claim}\n"
         f"prefer_source: {prefer_source}\n"
         f"Available engines: {available_engines}\n"
-        "Pick engines only from the available list."
     )
+    if tried:
+        user += (
+            f"\nThese queries were ALREADY tried and returned no usable results: {tried}\n"
+            "Generate DIFFERENT queries this time — rephrase, broaden or narrow the scope, "
+            "use synonyms, key entities, or alternate spellings. Do NOT repeat any tried query.\n"
+        )
+    user += "Pick engines only from the available list."
     try:
         result = (
             get_llm()
@@ -86,6 +94,7 @@ def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit
             except Exception as e:
                 log.warning("Search tool %s failed for %r: %s", engine, query, e)
                 continue
+            log.info("Search tool %s returned %d hits for %r", engine, len(result), query)
             for hit in result:
                 if hit.url in seen:
                     continue
@@ -95,7 +104,15 @@ def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit
 
 
 def document_search_agent(state: FactCheckState) -> SearchOutput:
-    queries, engines = _plan(state.claim, state.prefer_source)
-    log.info("Search plan: queries=%s engines=%s", queries, engines)
+    # state.search_queries holds the accumulated history. 
+    # this attempt returns only its own queries, which the reducer appends.
+    queries, engines = _plan(state.claim, state.prefer_source, state.search_queries)
+    log.info(
+        "Search plan (attempt %d): queries=%s engines=%s already_tried=%s",
+        state.retries + 1,
+        queries,
+        engines,
+        state.search_queries,
+    )
     candidates = _dispatch(queries, engines)
     return SearchOutput(search_queries=queries, candidates=candidates)
