@@ -1,17 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Grid, Typography } from "@mui/material";
+import {
+  Box, Dialog, DialogContent, DialogTitle,
+  Grid, IconButton, Typography,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import type { RootState } from "~/store/reducers/rootReducer";
 import type { AppDispatch } from "~/store";
-import type { HistoryItem } from "~/types/api";
+import type { Citation, HistoryItem } from "~/types/api";
 import { getHistory } from "~/store/actions/factcheckActions";
 import VerdictChip from "~/components/VerdictChip";
 import { CardBox, CitationBox, PassageText, SectionDivider } from "~/components/StyledWrappers";
 import { formatDateTime } from "~/utils/datetime";
+import { verdictLabel } from "~/utils/verdict";
+
+
+function dialogLeftFromGrid(el: HTMLDivElement | null): number {
+  const GRID_SPACING_PX = 24;  
+  if (!el){
+    return 0;
+  }
+  return Math.max(0, el.getBoundingClientRect().left - GRID_SPACING_PX);
+}
 
 export default function History() {
   const dispatch     = useDispatch<AppDispatch>();
   const claimHistory = useSelector((state: RootState) => state.factcheck.history);
+  const [selected, setSelected] = useState<HistoryItem | null>(null);
+  const [gridOffsetLeft, setGridOffsetLeft] = useState(0);
+  const gridRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     dispatch(getHistory());
@@ -32,9 +49,16 @@ export default function History() {
           </Grid>
         )}
 
-        <Grid item xs={12} className="previous-verifications">
+        <Grid item xs={12} className="previous-verifications" ref={gridRef}>
           {claimHistory.map((item: HistoryItem, i: number) => (
-            <CardBox key={item.id ?? i}>
+            <CardBox
+              key={item.id ?? i}
+              onClick={() => {
+                setGridOffsetLeft(dialogLeftFromGrid(gridRef.current));
+                setSelected(item);
+              }}
+              sx={{ cursor: "pointer", "&:hover": { boxShadow: 4 } }}
+            >
               <Box sx={{ minHeight: "12rem", maxHeight: "18rem", overflowY: "auto" }}>
                 <Typography variant="caption" color="textSecondary">{formatDateTime(item.datetime)}</Typography>
                 <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
@@ -61,6 +85,49 @@ export default function History() {
           ))}
         </Grid>
       </Grid>
+
+      <Dialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        maxWidth={false}
+        sx={{ "& .MuiDialog-container": { justifyContent: "flex-start", paddingLeft: `${gridOffsetLeft}px` } }}
+        PaperProps={{ sx: { width: "80rem", maxWidth: `calc(100vw - ${gridOffsetLeft}px)` } }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="caption" color="textSecondary">
+            {selected && formatDateTime(selected.datetime)}
+          </Typography>
+          <IconButton size="small" onClick={() => setSelected(null)}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+
+        {selected && (
+          <DialogContent>
+            <CardBox>
+              <Typography variant="subtitle2" color="textSecondary">Claim</Typography>
+              <Typography variant="body1" gutterBottom>"{selected.claim}"</Typography>
+              <VerdictChip verdict={selected.verdict} label={`Verdict: ${verdictLabel(selected.verdict)}`} sx={{ fontSize: "1rem" }} />
+            </CardBox>
+
+            {(selected.citations ?? []).length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ ml: "6px" }}>Citations</Typography>
+                {(selected.citations ?? []).map((c: Citation, i: number) => (
+                  <CitationBox key={i}>
+                    <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
+                    <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
+                    <PassageText>"{c.passage}"</PassageText>
+                    {c.reasoning && (
+                      <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                    )}
+                  </CitationBox>
+                ))}
+              </>
+            )}
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }
