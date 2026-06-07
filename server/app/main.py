@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import history as history_handler
 from app.api import verify as verify_handler
@@ -37,6 +38,11 @@ def create_app() -> FastAPI:
     )
     app.include_router(verify_handler.router)
     app.include_router(history_handler.router)
+
+    @app.get("/health", include_in_schema=False)
+    async def health() -> JSONResponse:
+        return JSONResponse({"status": "ok"})
+
     return app
 
 

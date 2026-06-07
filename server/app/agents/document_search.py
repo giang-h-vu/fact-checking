@@ -34,8 +34,11 @@ WEB_SEARCH_FALLBACK: dict[SearchSource, SearchSource] = {"brave": "duckduckgo"}
 
 SYSTEM = """You are the search-planning step of a fact-checking pipeline.
 
-Your task: rewrite the claim into 1 to 3 focused search queries, and assign each
-query to exactly one engine. Never send the same query to more than one engine.
+Given a claim and a hint about preferred sources, decide:
+  - 1 to 3 short search queries that would surface evidence for or against the claim
+  - assign each query to exactly one engine. 
+
+Never send the same query to more than one engine.
 
 Engines:
   - wikipedia: encyclopedic, historical, or well-established facts.
@@ -61,19 +64,24 @@ class SearchPlan(BaseModel):
 
 def _available_engines() -> list[SearchSource]:
     settings = get_settings()
+    key = settings.brave_api_key
+    log.info(
+        "brave_api_key present=%s length=%d",
+        bool(key),
+        len(key),
+    )
     out: list[SearchSource] = ["wikipedia", "duckduckgo"]
-    if settings.brave_api_key:
+    if key:
         out.append("brave")
+    log.info("Available engines: %s", out)
     return out
 
 
 def _resolve_engine(requested: str, available: list[SearchSource]) -> SearchSource | None:
     """Map a requested engine onto an available one.
 
-    Returns it directly if available; otherwise substitutes its web fallback
-    (e.g. brave -> duckduckgo when no Brave key is set); else None. This lets the
-    planner always ask for "brave" for web search and have the code pick the real
-    available engine.
+    Returns it directly if available;
+    otherwise substitutes its web fallback; else None.
     """
     for engine in available:
         if engine == requested:
@@ -108,6 +116,9 @@ async def _plan(
         )
         if not isinstance(result, SearchPlan):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
+        
+        log.info("LLM planned searches: %s", [(p.query, p.engine) for p in result.searches])
+
         resolved = (
             (p.query, _resolve_engine(p.engine, available_engines))
             for p in result.searches
@@ -116,6 +127,9 @@ async def _plan(
         plan: list[tuple[str, SearchSource]] = [
             (query, engine) for query, engine in resolved if engine is not None
         ][:MAX_SEARCHES]
+
+        log.info("Resolved plan: %s", plan)
+
     except Exception:
         log.warning("Search planner structured output failed; falling back to defaults")
         plan = []
