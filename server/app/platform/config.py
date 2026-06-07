@@ -10,9 +10,7 @@ class Settings(BaseSettings):
     ollama_model: str = ""
     ollama_num_ctx: int = 8192
 
-    google_api_key: str = ""
-    google_cse_id: str = ""
-    bing_api_key: str = ""
+    brave_api_key: str = ""
 
     database_url: str = ""
 

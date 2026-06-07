@@ -103,7 +103,7 @@ export default function SearchInput() {
                 >
                   <MenuItem value="auto">Auto (agent decides)</MenuItem>
                   <MenuItem value="wiki">Wikipedia</MenuItem>
-                  <MenuItem value="web">Web (Google + Bing)</MenuItem>
+                  <MenuItem value="web">Web (DuckDuckGo/Brave)</MenuItem>
                 </Select>
               </FormControl>
             </Box>

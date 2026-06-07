@@ -7,24 +7,24 @@ them as the tool's API contract.
 
 from langchain_core.tools import BaseTool
 
-from app.tools.bing_search import bing_search
+from app.tools.brave_search import brave_search
+from app.tools.duckduckgo_search import duckduckgo_search
 from app.tools.fetch_url import fetch_url
-from app.tools.google_search import google_search
 from app.tools.sources import SearchSource
 from app.tools.wikipedia_search import wikipedia_search
 
 # Single source of truth for search engine name → tool mapping.
 # Add a new engine here; everything else derives from this dict.
 SEARCH_SOURCES: dict[SearchSource, BaseTool] = {
-    "google": google_search,
-    "bing": bing_search,
+    "duckduckgo": duckduckgo_search,
+    "brave": brave_search,
     "wikipedia": wikipedia_search,
 }
 
 __all__ = [
     "SEARCH_SOURCES",
-    "bing_search",
+    "brave_search",
+    "duckduckgo_search",
     "fetch_url",
-    "google_search",
     "wikipedia_search",
 ]

@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-SearchSource = Literal["google", "bing", "wikipedia"]
+SearchSource = Literal["duckduckgo", "brave", "wikipedia"]
 
 
 class SearchHit(BaseModel):
