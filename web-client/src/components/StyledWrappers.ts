@@ -4,8 +4,6 @@ import { styled } from "@mui/material/styles";
 export const CardBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   marginBottom: theme.spacing(2),
-  height: "16rem",
-  overflowY: "auto",
 }));
 
 export const CitationBox = styled(Paper)(({ theme }) => ({

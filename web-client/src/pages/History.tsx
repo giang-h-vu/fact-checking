@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography } from "@mui/material";
 import type { RootState } from "~/store/reducers/rootReducer";
 import type { AppDispatch } from "~/store";
 import type { HistoryItem } from "~/types/api";
@@ -35,26 +35,28 @@ export default function History() {
         <Grid item xs={12} className="previous-verifications">
           {claimHistory.map((item: HistoryItem, i: number) => (
             <CardBox key={item.id ?? i}>
-              <Typography variant="caption" color="textSecondary">{formatDateTime(item.datetime)}</Typography>
-              <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
-              <VerdictChip verdict={item.verdict} />
+              <Box sx={{ minHeight: "12rem", maxHeight: "18rem", overflowY: "auto" }}>
+                <Typography variant="caption" color="textSecondary">{formatDateTime(item.datetime)}</Typography>
+                <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
+                <VerdictChip verdict={item.verdict} />
 
-              {(() => {
-                const citations = item.citations ?? [];
-                return citations.length === 0
-                  ? <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>No evidence found.</Typography>
-                  : citations.map((c, j) => (
-                    <CitationBox key={j} elevation={1}>
-                      <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
-                      <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
-                      <PassageText>"{c.passage}"</PassageText>
-                      <SectionDivider />
-                      {c.reasoning && (
-                        <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
-                      )}
-                    </CitationBox>
-                  ));
-              })()}
+                {(() => {
+                  const citations = item.citations ?? [];
+                  return citations.length === 0
+                    ? <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>No evidence found.</Typography>
+                    : citations.map((c, j) => (
+                      <CitationBox key={j} elevation={1}>
+                        <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
+                        <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
+                        <PassageText>"{c.passage}"</PassageText>
+                        <SectionDivider />
+                        {c.reasoning && (
+                          <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                        )}
+                      </CitationBox>
+                    ));
+                })()}
+              </Box>
             </CardBox>
           ))}
         </Grid>
