@@ -39,15 +39,22 @@ export default function History() {
               <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
               <VerdictChip verdict={item.verdict} />
 
-              {(item.citations ?? []).map((c, j: number) => (
-                <CitationBox key={j} elevation={1}>
-                  <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
-                  <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
-                  <PassageText>"{c.passage}"</PassageText>
-                </CitationBox>
-              ))}
-
-              <SectionDivider />
+              {(() => {
+                const citations = item.citations ?? [];
+                return citations.length === 0
+                  ? <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>No evidence found.</Typography>
+                  : citations.map((c, j) => (
+                    <CitationBox key={j} elevation={1}>
+                      <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
+                      <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
+                      <PassageText>"{c.passage}"</PassageText>
+                      <SectionDivider />
+                      {c.reasoning && (
+                        <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                      )}
+                    </CitationBox>
+                  ));
+              })()}
             </CardBox>
           ))}
         </Grid>

@@ -16,6 +16,7 @@ main {
   background: linear-gradient(to top right, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
   min-height: 85vh;
   overflow-y: auto;
+  overflow-x: hidden;
   /* Fill most of the screen on large displays (thin margins via 92%), but cap at
      120rem so the shell stops growing on ultra-wide monitors */
   width: min(92%, 120rem);
@@ -152,18 +153,28 @@ main {
   width: 100%;
   max-width: 80rem;
   margin: clamp(1.5rem, 3vw, 3rem) auto 1rem;
+  
+}
+
+/* Home page scrolls its own content so .glass doesn't stretch beyond the viewport. */
+.search-and-more.home-page {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(85vh - 4rem);
+  padding: 0 2rem 0 0rem;
 }
 
 /* History cards in a grid: columns sized to a decent width (~18rem; auto-fill).
   The grid scrolls internally once the cards overflow its height. */
 .previous-verifications {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
   gap: 1rem;
   /* Tracks the 85vh card minus the heading + margins above. */
   max-height: calc(85vh - 8rem);
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0 2rem 0 0rem;
 }
 
 /* CardBox carries its own marginBottom; zero it inside the grid so `gap` is the

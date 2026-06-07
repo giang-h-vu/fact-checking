@@ -4,6 +4,8 @@ import { styled } from "@mui/material/styles";
 export const CardBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   marginBottom: theme.spacing(2),
+  height: "16rem",
+  overflowY: "auto",
 }));
 
 export const CitationBox = styled(Paper)(({ theme }) => ({
@@ -23,6 +25,6 @@ export const PassageSpan = styled("span")(({ theme }) => ({
 }));
 
 export const SectionDivider = styled(Divider)({
-  marginTop: "2rem",
-  marginBottom: "2rem",
+  marginTop: "1rem",
+  marginBottom: "0rem",
 });

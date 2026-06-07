@@ -25,7 +25,7 @@ export default function Home() {
   }, [fetchingAnswer, verdict, error]);
 
   return (
-    <div className="search-and-more">
+    <div className="search-and-more home-page">
       <Grid container direction="row" alignItems="stretch" spacing={1} sx={{ mb: "1rem" }}>
         <Grid item xs={12}><SearchInput /></Grid>
 
