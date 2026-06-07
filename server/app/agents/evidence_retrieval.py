@@ -53,7 +53,7 @@ async def _fetch_one(url: str, sem: Semaphore) -> FetchedPage | None:
         except Exception as e:
             log.warning("Fetch failed for %s: %s", url, e)
             return None
-
+        
 
 async def _fetch_all(urls: list[str]) -> list[FetchedPage]:
     settings = get_settings()
@@ -63,19 +63,21 @@ async def _fetch_all(urls: list[str]) -> list[FetchedPage]:
     return [r for r in results if r and r.text]
 
 
-def _extract_passage(claim: str, page: FetchedPage) -> str | None:
+async def _extract_passage(claim: str, page: FetchedPage) -> str | None:
     article = page.text[:PAGE_CHAR_LIMIT]
     prompt = PASSAGE_PROMPT.format(claim=claim, article=article)
     try:
-        result = (
+        result = await (
             get_llm()
-            .with_structured_output(PassageExtraction)
-            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
+            .with_structured_output(PassageExtraction, method="json_schema")
+            .ainvoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
         )
         if not isinstance(result, PassageExtraction):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
     except Exception:
-        log.warning("Passage extraction structured output failed for %s", page.url)
+        log.warning(
+            "Passage extraction structured output failed for %s", page.url, exc_info=True
+        )
         return None
     return result.passage or None
 
@@ -87,10 +89,11 @@ async def evidence_retrieval_agent(state: FactCheckState) -> RetrievalOutput:
     pages = await _fetch_all([c.url for c in state.candidates])
     log.info("Fetched %d/%d pages", len(pages), len(state.candidates))
 
-    evidence: list[FetchedPage] = []
-    for page in pages:
-        passage = _extract_passage(state.claim, page)
+    passages = await gather(*(_extract_passage(state.claim, page) for page in pages))
+    evidence : list[FetchedPage] = []
+    for page, passage in zip(pages, passages):
         if passage:
             evidence.append(FetchedPage(url=page.url, title=page.title, text=passage))
+
     log.info("Kept %d passages with evidence", len(evidence))
     return RetrievalOutput(evidence=evidence)

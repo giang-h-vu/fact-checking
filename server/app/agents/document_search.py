@@ -11,6 +11,7 @@ Then dispatches each query × engine in Python (deterministic, easy to retry).
 from __future__ import annotations
 
 import logging
+from asyncio import gather
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
@@ -46,7 +47,7 @@ def _available_engines() -> list[SearchSource]:
     return out
 
 
-def _plan(
+async def _plan(
     claim: str, prefer_source: str, tried: list[str]
 ) -> tuple[list[str], list[SearchSource]]:
     available_engines = _available_engines()
@@ -63,10 +64,10 @@ def _plan(
         )
     user += "Pick engines only from the available list."
     try:
-        result = (
+        result = await (
             get_llm()
-            .with_structured_output(SearchPlan)
-            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=user)])
+            .with_structured_output(SearchPlan, method="json_schema")
+            .ainvoke([SystemMessage(content=SYSTEM), HumanMessage(content=user)])
         )
         if not isinstance(result, SearchPlan):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
@@ -84,13 +85,14 @@ def _plan(
 
 
 def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit]:
+    count = get_settings().search_results_per_query
     seen: set[str] = set()
     hits: list[SearchHit] = []
     for query in queries:
         for engine in engines:
             tool = SEARCH_SOURCES[engine]
             try:
-                result = tool.invoke({"query": query, "count": 5})
+                result = tool.invoke({"query": query, "count": count})
             except Exception as e:
                 log.warning("Search tool %s failed for %r: %s", engine, query, e)
                 continue
@@ -103,10 +105,8 @@ def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit
     return hits
 
 
-def document_search_agent(state: FactCheckState) -> SearchOutput:
-    # state.search_queries holds the accumulated history. 
-    # this attempt returns only its own queries, which the reducer appends.
-    queries, engines = _plan(state.claim, state.prefer_source, state.search_queries)
+async def document_search_agent(state: FactCheckState) -> SearchOutput:
+    queries, engines = await _plan(state.claim, state.prefer_source, state.search_queries)
     log.info(
         "Search plan (attempt %d): queries=%s engines=%s already_tried=%s",
         state.retries + 1,

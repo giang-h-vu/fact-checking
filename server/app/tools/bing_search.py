@@ -46,7 +46,7 @@ def _search(query: str, count: int) -> list[SearchHit]:
 
 
 @tool
-def bing_search(query: str, count: int = 5) -> list[SearchHit]:
+def bing_search(query: str, count: int = 3) -> list[SearchHit]:
     """Search Bing for the given query and return up to `count` web results.
 
     Best for: general web evidence; complements Google when results are sparse.

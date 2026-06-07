@@ -21,4 +21,5 @@ def get_llm(temperature: float = 0.1) -> ChatOllama:
         model=settings.ollama_model,
         base_url=settings.ollama_host,
         temperature=temperature,
+        num_ctx=settings.ollama_num_ctx,
     )

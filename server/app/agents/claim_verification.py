@@ -9,6 +9,7 @@ tie-breaker (matches the original NLI vote logic).
 from __future__ import annotations
 
 import logging
+from asyncio import gather
 from collections import Counter
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -35,13 +36,13 @@ class JudgeOutput(BaseModel):
     reasoning: str
 
 
-def _judge(claim: str, passage: str) -> tuple[Verdict, str]:
+async def _judge(claim: str, passage: str) -> tuple[Verdict, str]:
     prompt = PASSAGE_PROMPT.format(claim=claim, passage=passage)
     try:
-        result = (
+        result = await (
             get_llm()
-            .with_structured_output(JudgeOutput)
-            .invoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
+            .with_structured_output(JudgeOutput, method="json_schema")
+            .ainvoke([SystemMessage(content=SYSTEM), HumanMessage(content=prompt)])
         )
         if not isinstance(result, JudgeOutput):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
@@ -65,10 +66,10 @@ def _aggregate(verdicts: list[PassageVerdict]) -> Verdict:
     return Verdict.REFUTED
 
 
-def claim_verification_agent(state: FactCheckState) -> VerificationOutput:
+async def claim_verification_agent(state: FactCheckState) -> VerificationOutput:
+    judgements = await gather(*(_judge(state.claim, ev.text) for ev in state.evidence))
     passage_verdicts: list[PassageVerdict] = []
-    for ev in state.evidence:
-        label, reasoning = _judge(state.claim, ev.text)
+    for ev, (label, reasoning) in zip(state.evidence, judgements):
         passage_verdicts.append(
             PassageVerdict(
                 url=ev.url, title=ev.title, passage=ev.text, label=label, reasoning=reasoning

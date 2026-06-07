@@ -47,7 +47,7 @@ def _search(query: str, count: int) -> list[SearchHit]:
 
 
 @tool
-def google_search(query: str, count: int = 5) -> list[SearchHit]:
+def google_search(query: str, count: int = 3) -> list[SearchHit]:
     """Search Google for the given query and return up to `count` web results.
 
     Best for: general web evidence, news, blog posts, current events.

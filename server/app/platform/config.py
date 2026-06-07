@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     ollama_host: str = ""
     ollama_model: str = ""
+    ollama_num_ctx: int = 8192
 
     google_api_key: str = ""
     google_cse_id: str = ""
@@ -15,8 +16,9 @@ class Settings(BaseSettings):
 
     database_url: str = ""
 
-    http_timeout_seconds: float = 15.0
-    max_concurrent_fetches: int = 5
+    http_timeout_seconds: float = 20.0
+    max_concurrent_fetches: int = 3
+    search_results_per_query: int = 3
 
     cors_origins: str = ""
 
