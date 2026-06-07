@@ -26,7 +26,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_db()
     yield
 
-
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title="Fact Checking API", version="1.0.0", lifespan=lifespan)
@@ -38,12 +37,11 @@ def create_app() -> FastAPI:
     )
     app.include_router(verify_handler.router)
     app.include_router(history_handler.router)
-
-    @app.get("/health", include_in_schema=False)
-    async def health() -> JSONResponse:
-        return JSONResponse({"status": "ok"})
-
     return app
 
 
 app = create_app()
+
+@app.get("/health", include_in_schema=False)
+async def health() -> JSONResponse:
+    return JSONResponse({"status": "ok"})
