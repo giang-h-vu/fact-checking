@@ -23,9 +23,7 @@ The fastest way to run everything. Requires Docker with Compose v2.
 ```bash
 # 1. Build and start all services (Ollama + backend + frontend)
 docker compose up -d --build
-
-# 2. Pull the LLM model (first time only; stored in a Docker volume)
-docker exec -it ollama ollama pull qwen2.5:7b-instruct
+# The ollama-pull service automatically pulls qwen2.5:7b-instruct on first run.
 ```
 
 The app is then at **http://localhost**. The backend API is also exposed at `http://localhost:8000`.
@@ -66,10 +64,22 @@ See [`server/README.md`](server/README.md) and [`web-client/README.md`](web-clie
 
 | Model | VRAM | Notes |
 |---|---|---|
-| `llama3.1:70b-instruct` | ~48 GB | Best tool-calling quality |
+| `llama3.1:70b-instruct` | ~48 GB | Best quality |
 | `qwen2.5:7b-instruct` | ~8 GB | Good enough for development |
 
-Tool-calling quality drops below ~30B parameters. If verdicts are consistently wrong, the model is usually the cause.
+Structured output (`json_schema` mode) requires Ollama 0.3+. If verdicts are consistently `NOT_ENOUGH_INFO`, the model is usually the cause.
+
+### Configuration
+
+Key environment variables (set in `server/.env`):
+
+| Variable | Default | Description |
+|---|---|---|
+| `OLLAMA_MODEL` | — | Model tag, e.g. `qwen2.5:7b-instruct` |
+| `OLLAMA_NUM_CTX` | `8192` | Context window tokens |
+| `SEARCH_RESULTS_PER_QUERY` | `3` | Hits per search query |
+| `MAX_CONCURRENT_FETCHES` | `3` | Parallel URL fetches |
+| `BRAVE_API_KEY` | — | Optional; enables Brave search engine |
 
 ## API contract
 
