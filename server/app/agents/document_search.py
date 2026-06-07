@@ -2,7 +2,7 @@
 
 Asks the LLM to:
   1. Rephrase the claim into 1-3 targeted search queries.
-  2. Pick which engines to use (google / bing / wikipedia), respecting the
+  2. Pick which engines to use (duckduckgo / brave / wikipedia), respecting the
      `prefer_source` hint and what credentials are configured.
 
 Then dispatches each query × engine in Python (deterministic, easy to retry).
@@ -39,11 +39,9 @@ class SearchPlan(BaseModel):
 
 def _available_engines() -> list[SearchSource]:
     settings = get_settings()
-    out: list[SearchSource] = ["wikipedia"]
-    if settings.google_api_key and settings.google_cse_id:
-        out.append("google")
-    if settings.bing_api_key:
-        out.append("bing")
+    out: list[SearchSource] = ["wikipedia", "duckduckgo"]
+    if settings.brave_api_key:
+        out.append("brave")
     return out
 
 
@@ -84,24 +82,35 @@ async def _plan(
     return queries, engines
 
 
-def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit]:
+async def _run_one(engine: SearchSource, query: str, count: int) -> list[SearchHit]:
+    tool = SEARCH_SOURCES[engine]
+    try:
+        result: list[SearchHit] = await tool.ainvoke({"query": query, "count": count})
+    except Exception as e:
+        log.warning("Search tool %s failed for %r: %s", engine, query, e)
+        return []
+    log.info("Search tool %s returned %d hits for %r", engine, len(result), query)
+    return result
+
+
+async def _dispatch(queries: list[str], engines: list[SearchSource]) -> list[SearchHit]:
     count = get_settings().search_results_per_query
-    seen: set[str] = set()
-    hits: list[SearchHit] = []
+    # Fan out every query × engine concurrently; 
+    pairs : list[tuple[SearchSource, str]]
     for query in queries:
         for engine in engines:
-            tool = SEARCH_SOURCES[engine]
-            try:
-                result = tool.invoke({"query": query, "count": count})
-            except Exception as e:
-                log.warning("Search tool %s failed for %r: %s", engine, query, e)
+            log.info("Scheduling search: engine=%s query=%r", engine, query)
+            pairs.append((engine, query))
+    results = await gather(*(_run_one(engine, query, count) for engine, query in pairs))
+
+    seen: set[str] = set()
+    hits: list[SearchHit] = []
+    for result in results:
+        for hit in result:
+            if hit.url in seen:
                 continue
-            log.info("Search tool %s returned %d hits for %r", engine, len(result), query)
-            for hit in result:
-                if hit.url in seen:
-                    continue
-                seen.add(hit.url)
-                hits.append(hit)
+            seen.add(hit.url)
+            hits.append(hit)
     return hits
 
 
@@ -114,5 +123,5 @@ async def document_search_agent(state: FactCheckState) -> SearchOutput:
         engines,
         state.search_queries,
     )
-    candidates = _dispatch(queries, engines)
+    candidates = await _dispatch(queries, engines)
     return SearchOutput(search_queries=queries, candidates=candidates)
