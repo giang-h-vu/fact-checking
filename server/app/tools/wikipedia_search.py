@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import html
 import re
 
@@ -25,8 +26,8 @@ def _clean(snippet: str) -> str:
     wait=wait_exponential(multiplier=1, min=1, max=8),
     retry=retry_if_exception_type(MediaWikiException),
 )
-def _search(query: str, count: int) -> list[SearchHit]:
-    # Call the action API directly rather than _wiki.search() to get the snippet; 
+def _search_sync(query: str, count: int) -> list[SearchHit]:
+    # Call the action API directly rather than _wiki.search() to get the snippet;
     # titles have no URL field, hence reconstructing the canonical article URL.
     resp = _wiki.wiki_request(
         {
@@ -50,10 +51,10 @@ def _search(query: str, count: int) -> list[SearchHit]:
 
 
 @tool
-def wikipedia_search(query: str, count: int = 3) -> list[SearchHit]:
+async def wikipedia_search(query: str, count: int = 3) -> list[SearchHit]:
     """Search Wikipedia for articles relevant to the query.
 
     Best for: encyclopedic facts, historical events, well-established topics.
     Skips disambiguation pages automatically. Returns up to `count` hits.
     """
-    return _search(query, min(max(count, 1), 10))
+    return await asyncio.to_thread(_search_sync, query, min(max(count, 1), 10))
