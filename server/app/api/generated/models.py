@@ -5,60 +5,60 @@ from __future__ import annotations
 
 from datetime import datetime as datetime_aliased
 from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, Dict, List, Optional
 
 from pydantic import AnyUrl, BaseModel, Field
 
 
 class PreferSource(Enum):
-    auto = "auto"
-    wiki = "wiki"
-    web = "web"
+    auto = 'auto'
+    wiki = 'wiki'
+    web = 'web'
 
 
 class VerifyRequest(BaseModel):
     claim: Annotated[
         str,
         Field(
-            description="The natural-language statement to verify",
+            description='The natural-language statement to verify',
             max_length=1000,
             min_length=1,
         ),
     ]
     prefer_source: Annotated[
-        PreferSource | None,
+        Optional[PreferSource],
         Field(
-            description="Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto."
+            description='Source preference for the verification request. `auto` lets the agent decide. Omit or send null to use auto.'
         ),
     ] = None
 
 
 class Verdict(Enum):
-    SUPPORTED = "SUPPORTED"
-    REFUTED = "REFUTED"
-    NOT_ENOUGH_INFO = "NOT_ENOUGH_INFO"
+    SUPPORTED = 'SUPPORTED'
+    REFUTED = 'REFUTED'
+    NOT_ENOUGH_INFO = 'NOT_ENOUGH_INFO'
 
 
 class SseEventType(Enum):
-    search_started = "search_started"
-    candidates_found = "candidates_found"
-    passage_found = "passage_found"
-    passage_verdict = "passage_verdict"
-    final_verdict = "final_verdict"
-    done = "done"
-    error = "error"
+    search_started = 'search_started'
+    candidates_found = 'candidates_found'
+    passage_found = 'passage_found'
+    passage_verdict = 'passage_verdict'
+    final_verdict = 'final_verdict'
+    done = 'done'
+    error = 'error'
 
 
 class Source(Enum):
-    google = "google"
-    bing = "bing"
-    wikipedia = "wikipedia"
+    duckduckgo = 'duckduckgo'
+    brave = 'brave'
+    wikipedia = 'wikipedia'
 
 
 class SearchCandidate(BaseModel):
     url: AnyUrl
     title: str
-    snippet: str | None = None
+    snippet: Optional[str] = None
     source: Source
 
 
@@ -67,7 +67,7 @@ class Citation(BaseModel):
     title: str
     passage: str
     label: Verdict
-    reasoning: str | None = None
+    reasoning: Optional[str] = None
 
 
 class HistoryItem(BaseModel):
@@ -75,25 +75,25 @@ class HistoryItem(BaseModel):
     claim: str
     datetime: datetime_aliased
     verdict: Verdict
-    citations: list[Citation] | None = None
+    citations: Optional[List[Citation]] = None
 
 
 class HistoryResponse(BaseModel):
-    items: list[HistoryItem]
+    items: List[HistoryItem]
 
 
 class Error(BaseModel):
     code: str
     message: str
-    details: dict[str, Any] | None = None
+    details: Optional[Dict[str, Any]] = None
 
 
 class SearchStartedPayload(BaseModel):
-    queries: list[str]
+    queries: List[str]
 
 
 class CandidatesFoundPayload(BaseModel):
-    items: list[SearchCandidate]
+    items: List[SearchCandidate]
 
 
 class PassageFoundPayload(BaseModel):
@@ -110,4 +110,4 @@ class PassageVerdictPayload(BaseModel):
 
 class FinalVerdictPayload(BaseModel):
     verdict: Verdict
-    citations: list[Citation]
+    citations: List[Citation]

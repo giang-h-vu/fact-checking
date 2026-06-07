@@ -128,7 +128,7 @@ components:
         url:    { type: string, format: uri }
         title:  { type: string }
         snippet: { type: string }
-        source: { type: string, enum: [google, bing, wikipedia] }
+        source: { type: string, enum: [duckduckgo, brave, wikipedia] }
 
     Citation:
       type: object

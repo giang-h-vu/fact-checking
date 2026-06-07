@@ -76,7 +76,7 @@ export interface components {
             title: string;
             snippet?: string;
             /** @enum {string} */
-            source: "google" | "bing" | "wikipedia";
+            source: "duckduckgo" | "brave" | "wikipedia";
         };
         Citation: {
             /** Format: uri */
