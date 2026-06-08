@@ -35,6 +35,8 @@ const theme = createTheme({
       REFUTED:         { main: "#c62828", contrastText: common.white },
       NOT_ENOUGH_INFO: { main: "#757575", contrastText: common.white },
     },
+    // Signature teal used by the sidebar/nav and the login screen.
+    brand: { main: "#10A19D", dark: "#0B7A77" },
   },
   components: {
     MuiTableRow: {
