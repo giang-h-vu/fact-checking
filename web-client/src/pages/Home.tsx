@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Grid, Typography } from "@mui/material";
+import { Grid, Typography, useTheme } from "@mui/material";
 import type { RootState } from "~/store/reducers/rootReducer";
 import type { Citation } from "~/types/api";
 import SearchInput from "~/components/SearchInput";
@@ -15,7 +15,7 @@ export default function Home() {
   const citations      = useSelector((state: RootState) => state.factcheck.citations);
   const error          = useSelector((state: RootState) => state.factcheck.error);
   const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
-
+  const { palette } = useTheme();
   const resultsRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -42,7 +42,7 @@ export default function Home() {
         {verdict && (
           <Grid item xs={12}>
             <CardBox>
-              <Typography variant="subtitle2" color="textSecondary">Claim</Typography>
+              <Typography variant="subtitle2" color={palette.text.secondary}>Claim</Typography>
               <Typography variant="body1" gutterBottom>"{claim}"</Typography>
               <VerdictChip verdict={verdict} label={`Verdict: ${verdictLabel(verdict)}`} sx={{ fontSize: "1rem" }} />
             </CardBox>
@@ -56,7 +56,7 @@ export default function Home() {
                     <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
                     <PassageText>"{c.passage}"</PassageText>
                     {c.reasoning && (
-                      <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                      <Typography variant="caption" color={palette.text.secondary}>{c.reasoning}</Typography>
                     )}
                   </CitationBox>
                 ))}

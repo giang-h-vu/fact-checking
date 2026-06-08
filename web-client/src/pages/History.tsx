@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Box, Dialog, DialogContent, DialogTitle,
   Grid, IconButton, Typography,
+  useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import type { RootState } from "~/store/reducers/rootReducer";
@@ -29,6 +30,8 @@ export default function History() {
   const [selected, setSelected] = useState<HistoryItem | null>(null);
   const [gridOffsetLeft, setGridOffsetLeft] = useState(0);
   const gridRef = React.useRef<HTMLDivElement>(null);
+  const { palette } = useTheme();
+
 
   useEffect(() => {
     dispatch(getHistory());
@@ -43,7 +46,7 @@ export default function History() {
 
         {claimHistory.length === 0 && (
           <Grid item xs={12} sx={{ ml: "6px" }}>
-            <Typography color="textSecondary" align="center">
+            <Typography color={palette.text.secondary} align="center">
               No verifications yet. Submit a claim on the home page.
             </Typography>
           </Grid>
@@ -60,14 +63,14 @@ export default function History() {
               sx={{ cursor: "pointer", "&:hover": { boxShadow: 4 } }}
             >
               <Box sx={{ minHeight: "12rem", maxHeight: "18rem", overflowY: "auto" }}>
-                <Typography variant="caption" color="textSecondary">{formatDateTime(item.datetime)}</Typography>
+                <Typography variant="caption" color={palette.text.secondary}>{formatDateTime(item.datetime)}</Typography>
                 <Typography variant="h6" gutterBottom>"{item.claim}"</Typography>
                 <VerdictChip verdict={item.verdict} />
 
                 {(() => {
                   const citations = item.citations ?? [];
                   return citations.length === 0
-                    ? <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>No evidence found.</Typography>
+                    ? <Typography variant="body2" color={palette.text.secondary} sx={{ mt: 1 }}>No evidence found.</Typography>
                     : citations.map((c, j) => (
                       <CitationBox key={j} elevation={1}>
                         <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
@@ -75,7 +78,7 @@ export default function History() {
                         <PassageText>"{c.passage}"</PassageText>
                         <SectionDivider />
                         {c.reasoning && (
-                          <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                          <Typography variant="caption" color={palette.text.secondary}>{c.reasoning}</Typography>
                         )}
                       </CitationBox>
                     ));
@@ -94,7 +97,7 @@ export default function History() {
         PaperProps={{ sx: { width: "80rem", maxWidth: `calc(100vw - ${gridOffsetLeft}px)` } }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="caption" color="textSecondary">
+          <Typography variant="caption" color={palette.text.secondary}>
             {selected && formatDateTime(selected.datetime)}
           </Typography>
           <IconButton size="small" onClick={() => setSelected(null)}>
@@ -105,7 +108,7 @@ export default function History() {
         {selected && (
           <DialogContent>
             <CardBox>
-              <Typography variant="subtitle2" color="textSecondary">Claim</Typography>
+              <Typography variant="subtitle2" color={palette.text.secondary}>Claim</Typography>
               <Typography variant="body1" gutterBottom>"{selected.claim}"</Typography>
               <VerdictChip verdict={selected.verdict} label={`Verdict: ${verdictLabel(selected.verdict)}`} sx={{ fontSize: "1rem" }} />
             </CardBox>
@@ -119,7 +122,7 @@ export default function History() {
                     <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
                     <PassageText>"{c.passage}"</PassageText>
                     {c.reasoning && (
-                      <Typography variant="caption" color="textSecondary">{c.reasoning}</Typography>
+                      <Typography variant="caption" color={palette.text.secondary}>{c.reasoning}</Typography>
                     )}
                   </CitationBox>
                 ))}
