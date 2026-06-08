@@ -1,6 +1,7 @@
 import type { components } from "~/api";
 
 export type Verdict         = components["schemas"]["Verdict"];
+export type User            = components["schemas"]["User"];
 export type SseEventType    = components["schemas"]["SseEventType"];
 export type Citation        = components["schemas"]["Citation"];
 export type HistoryItem     = components["schemas"]["HistoryItem"];
