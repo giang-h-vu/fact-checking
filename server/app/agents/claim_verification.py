@@ -69,7 +69,7 @@ def _aggregate(verdicts: list[PassageVerdict]) -> Verdict:
 async def claim_verification_agent(state: FactCheckState) -> VerificationOutput:
     judgements = await gather(*(_judge(state.claim, ev.text) for ev in state.evidence))
     passage_verdicts: list[PassageVerdict] = []
-    for ev, (label, reasoning) in zip(state.evidence, judgements):
+    for ev, (label, reasoning) in zip(state.evidence, judgements, strict=False):
         passage_verdicts.append(
             PassageVerdict(
                 url=ev.url, title=ev.title, passage=ev.text, label=label, reasoning=reasoning

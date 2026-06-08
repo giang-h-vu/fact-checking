@@ -91,7 +91,7 @@ async def evidence_retrieval_agent(state: FactCheckState) -> RetrievalOutput:
 
     passages = await gather(*(_extract_passage(state.claim, page) for page in pages))
     evidence : list[FetchedPage] = []
-    for page, passage in zip(pages, passages):
+    for page, passage in zip(pages, passages, strict=False):
         if passage:
             evidence.append(FetchedPage(url=page.url, title=page.title, text=passage))
 
