@@ -56,6 +56,8 @@ services:
       OLLAMA_MODEL: *ollama-model
       DATABASE_URL: sqlite+aiosqlite:////app/data/fact_checking.db
       CORS_ORIGINS: http://localhost
+      OAUTH_REDIRECT_URI: http://localhost/api/v1/auth/google/callback
+      FRONTEND_URL: http://localhost
     volumes:
       - server_data:/app/data
     ports:
@@ -65,7 +67,7 @@ services:
       ollama-pull:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/history')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
