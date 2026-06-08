@@ -63,7 +63,7 @@ strict = true
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["trafilatura", "trafilatura.*", "mediawiki", "ddgs", "ddgs.*"]
+module = ["trafilatura", "trafilatura.*", "mediawiki", "ddgs", "ddgs.*", "authlib.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

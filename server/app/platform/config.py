@@ -20,6 +20,27 @@ class Settings(BaseSettings):
 
     cors_origins: str = ""
 
+    # --- Auth (Google OAuth + JWT sessions) ---------------------------------
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    # The callback URL registered with Google; the browser is sent here after consent.
+    oauth_redirect_uri: str = "http://localhost:5173/api/v1/auth/google/callback"
+    # Where the backend redirects the browser after a successful login.
+    frontend_url: str = "http://localhost:5173/"
+
+    # Signs the short-lived access-token JWT.
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    # Signs the Starlette session that holds Authlib's OAuth state/nonce.
+    session_secret: str = ""
+
+    access_token_ttl_seconds: int = 900          # 15 minutes
+    refresh_token_ttl_seconds: int = 1_209_600   # 14 days
+
+    # Cookies: Secure should be True behind HTTPS in production.
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
