@@ -12,9 +12,9 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator
-from typing import Literal, overload
+from typing import Annotated, Literal, overload
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
@@ -36,7 +36,8 @@ from app.domain.state import (
     Verdict,
     VerificationOutput,
 )
-from app.platform.db.models import Citation, SearchRequest
+from app.platform.auth.dependencies import get_current_user
+from app.platform.db.models import Citation, SearchRequest, User
 from app.platform.db.session import session_scope
 
 log = logging.getLogger(__name__)
@@ -92,9 +93,10 @@ def sse(event: SseEventType, data: BaseModel | None = None) -> dict[str, str]:
     }
 
 
-async def _persist(state: FactCheckState) -> None:
+async def _persist(state: FactCheckState, user_id: int) -> None:
     async with session_scope() as session:
         request = SearchRequest(
+            user_id=user_id,
             claim=state.claim,
             verdict=state.final_verdict or Verdict.NOT_ENOUGH_INFO,
         )
@@ -115,7 +117,7 @@ async def _persist(state: FactCheckState) -> None:
         await session.commit()
 
 
-async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
+async def _event_stream(req: VerifyRequest, user_id: int) -> AsyncIterator[dict[str, str]]:
     graph = build_graph()
     initial = FactCheckState(
         claim=req.claim,
@@ -176,7 +178,7 @@ async def _event_stream(req: VerifyRequest) -> AsyncIterator[dict[str, str]]:
                 "final_verdict": verification.final_verdict,
                 "citations": verification.citations,
                 "passage_verdicts": verification.passage_verdicts,
-            }))
+            }), user_id)
         else:
             raise RuntimeError("Verification did not complete")
         
@@ -191,8 +193,12 @@ router = APIRouter(tags=["verify"])
 
 
 @router.post("/api/v1/verify")
-async def stream_verify(body: VerifyRequest) -> EventSourceResponse:
+async def stream_verify(
+    body: VerifyRequest,
+    user: Annotated[User, Depends(get_current_user)],
+) -> EventSourceResponse:
+    assert user.id is not None
     return EventSourceResponse(
-        _event_stream(body),
+        _event_stream(body, user.id),
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

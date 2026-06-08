@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Annotated, TypeVar
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
@@ -18,7 +18,8 @@ from app.api.generated.models import (
     HistoryResponse,
     Verdict,
 )
-from app.platform.db.models import Citation, SearchRequest
+from app.platform.auth.dependencies import get_current_user
+from app.platform.db.models import Citation, SearchRequest, User
 from app.platform.db.session import session_scope
 
 T = TypeVar("T")
@@ -33,12 +34,16 @@ router = APIRouter(tags=["history"])
 
 @router.get("/api/v1/history", response_model=HistoryResponse)
 async def list_history(
+    user: Annotated[User, Depends(get_current_user)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> HistoryResponse:
     async with session_scope() as session:
         requests = await _fetch_all(
             session,
-            select(SearchRequest).order_by(col(SearchRequest.created_at).desc()).limit(limit),
+            select(SearchRequest)
+            .where(SearchRequest.user_id == user.id)
+            .order_by(col(SearchRequest.created_at).desc())
+            .limit(limit),
         )
         if not requests:
             return HistoryResponse(items=[])
