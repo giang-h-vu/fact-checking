@@ -16,6 +16,14 @@ Information flows one-way: `api/openapi.yaml` → generators → `server/` and `
 
 ## Quick start
 
+### Prerequisites — Google OAuth credentials
+
+The app requires Google OAuth. Before running:
+
+1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → Create OAuth 2.0 Client ID (Web application)
+2. Add `http://localhost:5173/api/v1/auth/google/callback` to **Authorized redirect URIs**
+3. Copy the Client ID and Client Secret into `server/.env` (see Configuration below)
+
 ### Docker (full stack)
 
 The fastest way to run everything. Requires Docker with Compose v2.
@@ -51,7 +59,8 @@ docker compose up -d ollama
 docker exec -it ollama ollama pull qwen2.5:7b-instruct
 
 # 2. Backend
-cd server && cp .env.example .env && uv sync
+cd server && cp .env.example .env   # fill in Google OAuth + secret values (see below)
+uv sync
 uv run uvicorn app.main:app --reload --port 8000   # → http://localhost:8000/docs
 
 # 3. Web client (second terminal)
@@ -80,6 +89,11 @@ Key environment variables (set in `server/.env`):
 | `SEARCH_RESULTS_PER_QUERY` | `3` | Hits per search query |
 | `MAX_CONCURRENT_FETCHES` | `3` | Parallel URL fetches |
 | `BRAVE_API_KEY` | — | Optional; enables Brave search engine |
+| `GOOGLE_CLIENT_ID` | — | From Google Cloud Console OAuth client |
+| `GOOGLE_CLIENT_SECRET` | — | From Google Cloud Console OAuth client |
+| `JWT_SECRET` | — | Random secret ≥32 chars — `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `SESSION_SECRET` | — | Random secret ≥32 chars (separate from JWT_SECRET) |
+| `COOKIE_SECURE` | `false` | Set `true` in production (requires HTTPS) |
 
 ## API contract
 
