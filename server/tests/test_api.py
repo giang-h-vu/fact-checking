@@ -22,20 +22,38 @@ from app.api.generated.models import (
 )
 from app.api.verify import EVENT_PAYLOAD, sse
 from app.main import create_app
+from app.platform.auth.tokens import mint_access_token
+from tests.conftest import seed_user
+
+TEST_EMAIL = "test@example.com"
 
 
 @pytest.fixture
-def client(monkeypatch):
+def db_url(monkeypatch):
     # Point the DB at a fresh temp file per test to avoid cross-test pollution.
     tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
     tmp.close()
-    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{tmp.name}")
+    url = f"sqlite+aiosqlite:///{tmp.name}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    yield url
+    os.unlink(tmp.name)
 
-    # Re-create settings with the patched env.
+
+@pytest.fixture
+def client(db_url):
+    """Authenticated client: seeds a user and presents a valid access cookie."""
+    user_id = seed_user(db_url, email=TEST_EMAIL)
+    token = mint_access_token(user_id, TEST_EMAIL)
     with TestClient(create_app()) as c:
+        c.cookies.set("access_token", token)
         yield c
 
-    os.unlink(tmp.name)
+
+@pytest.fixture
+def anon_client(db_url):
+    """Unauthenticated client — no cookie."""
+    with TestClient(create_app()) as c:
+        yield c
 
 
 class TestHistory:
@@ -51,6 +69,10 @@ class TestHistory:
     def test_limit_out_of_range_rejected(self, client):
         r = client.get("/api/v1/history?limit=999")
         assert r.status_code == 422
+
+    def test_requires_authentication(self, anon_client):
+        r = anon_client.get("/api/v1/history")
+        assert r.status_code == 401
 
 
 class TestVerifyValidation:
