@@ -7,7 +7,14 @@ from datetime import datetime as datetime_aliased
 from enum import Enum
 from typing import Annotated, Any, Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, EmailStr, Field
+
+
+class User(BaseModel):
+    id: int
+    email: EmailStr
+    name: str
+    picture: Optional[AnyUrl] = None
 
 
 class PreferSource(Enum):

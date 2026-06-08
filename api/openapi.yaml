@@ -16,16 +16,95 @@ servers:
   - url: http://localhost:8000
     description: Local dev
 tags:
+  - name: auth
+    description: Google OAuth login and session management
   - name: verify
     description: Real-time claim verification (SSE)
   - name: history
     description: Past verification requests
 
 paths:
+  /api/v1/auth/google/login:
+    get:
+      tags: [auth]
+      operationId: authGoogleLogin
+      summary: Begin Google OAuth — redirect the browser to Google's consent screen
+      responses:
+        '302':
+          description: Redirect to Google's OAuth 2.0 authorization endpoint
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/auth/google/callback:
+    get:
+      tags: [auth]
+      operationId: authGoogleCallback
+      summary: Google OAuth callback — exchange code, set session cookies, redirect home
+      parameters:
+        - in: query
+          name: code
+          required: false
+          schema: { type: string }
+        - in: query
+          name: state
+          required: false
+          schema: { type: string }
+      responses:
+        '302':
+          description: |
+            Authentication succeeded. Sets httpOnly `access_token` and
+            `refresh_token` cookies and redirects to the frontend.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: authRefresh
+      summary: Rotate the refresh token and mint a fresh access token
+      description: |
+        Reads the httpOnly `refresh_token` cookie, rotates it (the old token is
+        revoked and a new one issued), and sets a new `access_token` cookie.
+      responses:
+        '204':
+          description: New `access_token` and `refresh_token` cookies set
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      operationId: authLogout
+      summary: Revoke the current refresh token and clear session cookies
+      responses:
+        '204':
+          description: Session cookies cleared
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: Return the currently authenticated user
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/v1/verify:
     post:
       tags: [verify]
       operationId: streamVerify
+      security:
+        - cookieAuth: []
       summary: Verify a claim and stream agent progress over SSE
       description: |
         Returns `text/event-stream`. The stream emits the following named
@@ -57,6 +136,8 @@ paths:
                 description: "Concatenated SSE frames (event/data lines per WHATWG HTML Living Standard §9.2)"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
         '500':
@@ -67,6 +148,8 @@ paths:
       tags: [history]
       operationId: listHistory
       summary: List recent verification requests
+      security:
+        - cookieAuth: []
       parameters:
         - in: query
           name: limit
@@ -85,13 +168,31 @@ paths:
                 $ref: '#/components/schemas/HistoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
         '500':
           $ref: '#/components/responses/ServerError'
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: Short-lived access-token JWT stored in an httpOnly cookie.
+
   schemas:
+    User:
+      type: object
+      required: [id, email, name]
+      properties:
+        id:      { type: integer }
+        email:   { type: string, format: email }
+        name:    { type: string }
+        picture: { type: string, format: uri }
+
     VerifyRequest:
       type: object
       required: [claim]
@@ -216,6 +317,11 @@ components:
   responses:
     BadRequest:
       description: Invalid request payload
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid authentication
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
