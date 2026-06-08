@@ -34,23 +34,27 @@ WEB_SEARCH_FALLBACK: dict[SearchSource, SearchSource] = {"brave": "duckduckgo"}
 
 SYSTEM = """You are the search-planning step of a fact-checking pipeline.
 
-Given a claim and a hint about preferred sources, decide:
-  - 1 to 3 short search queries that would surface evidence for or against the claim
-  - assign each query to exactly one engine. 
+Given a claim and a hint about preferred sources, produce 1 to 3 short search
+queries that would surface evidence for or against the claim. For each query,
+assign exactly one engine.
 
-Never send the same query to more than one engine.
+Engine descriptions — use these to decide which engine fits each query:
+  - wikipedia: encyclopedic, historical, scientific, or well-established facts.
+    Good for: definitions, biographies, historical events, geography, science.
+  - brave: web search — news, current events, recent releases, niche topics,
+    product/company information, anything that changes over time.
+    Good for: recent events, movies/shows, sports results, living people's activities.
 
-Engines:
-  - wikipedia: encyclopedic, historical, or well-established facts.
-  - brave: the web search engine — news, current events, recent or niche topics.
-
-Apply the prefer_source hint:
-  - auto: pick wikipedia or brave per query, whichever best fits the query.
-  - wiki: assign every query to wikipedia.
-  - web: assign every query to brave.
+How to assign engines (apply the prefer_source hint):
+  - wiki: assign every query to wikipedia regardless of topic.
+  - web:  assign every query to brave regardless of topic.
+  - auto: for EACH query independently, ask "is this best answered by an
+    encyclopedia or by a web search?" and assign accordingly.
+    Multiple queries CAN and SHOULD use the same engine if the topic calls for it.
+    Do NOT distribute engines across queries just to use variety.
 
 Only use engine names from the available engines list. If brave is not listed,
-use the other web engine that is.
+use the other web engine that is available instead.
 """
 
 class PlannedSearch(BaseModel):
