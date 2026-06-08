@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Cookies: Secure should be True behind HTTPS in production.
     cookie_secure: bool = False
-    cookie_samesite: str = "lax"
+    cookie_samesite: str = "strict"
 
     @property
     def cors_origins_list(self) -> list[str]:

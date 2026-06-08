@@ -4,6 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from sqlalchemy import delete, func
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -13,18 +14,21 @@ from app.api import auth as auth_handler
 from app.api import history as history_handler
 from app.api import verify as verify_handler
 from app.platform.config import get_settings
+from app.platform.db.models import RefreshToken
+from app.platform.db.session import init_db, session_scope
 
 # TODO: Set this only in development, or use a more sophisticated logging config
 logging.basicConfig(level=logging.INFO)
 
 
-
-# Initializing database at app startup.
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    from app.platform.db.session import init_db
-
     await init_db()
+    async with session_scope() as session:
+        await session.execute(
+            delete(RefreshToken).where(RefreshToken.expires_at < func.now())
+        )
+        await session.commit()
     yield
 
 def create_app() -> FastAPI:
