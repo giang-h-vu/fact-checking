@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: web-route
+  namespace: fact-checking
+spec:
+  parentRefs:
+    - name: fact-checking-gateway
+  hostnames:
+    - factchecking.dpdns.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /   # catch-all: everything not matched by /api goes to the React SPA
+      backendRefs:
+        - name: web
+          port: 80
