@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: fact-checking-gateway
+  namespace: fact-checking
+  annotations:
+    # cert-manager sees this annotation and creates a Certificate automatically
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  gatewayClassName: nginx
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: factchecking.dpdns.org
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: factchecking.dpdns.org
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: fact-checking-tls   # Secret cert-manager will create
+            kind: Secret
