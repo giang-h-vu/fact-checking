@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: fact-checking
+data:
+  OLLAMA_HOST: "http://ollama:11434"           # DNS name of the ollama Service
+  OLLAMA_MODEL: "qwen2.5:7b-instruct"
+  OLLAMA_NUM_CTX: "8192"
+  DATABASE_URL: "sqlite+aiosqlite:////app/data/fact_checking.db"
+  CORS_ORIGINS: "https://factchecking.dpdns.org"
+  FRONTEND_URL: "https://factchecking.dpdns.org"
+  OAUTH_REDIRECT_URI: "https://factchecking.dpdns.org/api/v1/auth/google/callback"
+  COOKIE_SECURE: "true"
+  COOKIE_SAMESITE: "strict"
+  HTTP_TIMEOUT_SECONDS: "20"
+  MAX_CONCURRENT_FETCHES: "3"
+  SEARCH_RESULTS_PER_QUERY: "3"

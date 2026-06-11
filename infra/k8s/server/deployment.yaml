@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  namespace: fact-checking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/giang-h-vu/fact-checking-server:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: server-config   # non-sensitive config
+            - secretRef:
+                name: app-secrets     # sensitive values
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: server-data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      volumes:
+        - name: server-data
+          persistentVolumeClaim:
+            claimName: server-data

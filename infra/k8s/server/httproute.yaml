@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: server-route
+  namespace: fact-checking
+spec:
+  parentRefs:
+    - name: fact-checking-gateway   # which Gateway this route attaches to
+  hostnames:
+    - factchecking.dpdns.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api   # all /api/* requests go to the FastAPI backend
+      backendRefs:
+        - name: server
+          port: 8000
