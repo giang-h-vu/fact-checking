@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: fact-checking
+spec:
+  selector:
+    app: ollama
+  ports:
+    - port: 11434
+      targetPort: 11434
+  # ClusterIP = only reachable inside the cluster (by the server pod).
+  # Ollama should never be exposed to the internet.
+  type: ClusterIP
