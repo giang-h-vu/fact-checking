@@ -1,0 +1,1 @@
+az aks start --name fact-checking --resource-group fact-checking
