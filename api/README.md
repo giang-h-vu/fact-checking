@@ -12,14 +12,32 @@ api/
     └── redocly.yaml      # Redocly lint config
 ```
 
-## Information flow
+## How it works
+
+Both services consume types generated from the spec — neither defines its own request/response shapes:
 
 ```
-api/openapi.yaml ──► fastapi-code-generator ──► server/app/api/generated/
-                 └─► openapi-typescript     ──► web-client/src/api.ts
+api/openapi.yaml ──► datamodel-codegen   ──► server/app/api/generated/models.py  (Pydantic v2)
+                 └─► openapi-typescript  ──► web-client/src/api.ts               (TS types)
 ```
 
 Strictly one-way. Services consume; they never write back into `api/`.
+
+| Side | Generator | Output |
+|---|---|---|
+| Backend (Python) | `datamodel-codegen` | Pydantic v2 **models only** → `server/app/api/generated/models.py`. Routers are hand-written in `server/app/api/` and import these models. |
+| Frontend (TS) | `openapi-typescript` | Type-only file → `web-client/src/api.ts`, consumed via `openapi-fetch` and the Redux actions. |
+
+Hand-written DTOs are forbidden and instead added to the spec.
+
+## SSE events are part of the contract
+
+The `/api/v1/verify` endpoint returns `text/event-stream`. OpenAPI can't bind an SSE event *name* to a payload schema, so the spec declares an `SseEventType` enum plus one schema per event payload (`SearchStartedPayload`, `CandidatesFoundPayload`, `PassageFoundPayload`, `PassageVerdictPayload`, `FinalVerdictPayload`). Each side then enforces the name→payload pairing itself:
+
+- **Backend**: the `EVENT_PAYLOAD` registry + typed `sse()` overloads in `server/app/api/verify.py`
+- **Frontend**: the `SsePayloadMap` in `web-client/src/types/sse.ts`, with a compile-time exhaustiveness guard
+
+Both are checked (a backend test and a frontend build error respectively) so a new event without a payload schema cannot ship.
 
 ## Common tasks
 
@@ -28,11 +46,9 @@ Run these from the **repo root**:
 | What you want | Command |
 |---|---|
 | Lint the spec | `make -C api lint` |
-| Regenerate stubs after editing the spec | `make -C api generate` |
+| Regenerate types after editing the spec | `make -C api generate` |
 | Verify CI will pass | `make -C api check` |
 | Delete generated artefacts (force full regen) | `make -C api clean` |
-
-Or `cd api` and drop the `make -C api` prefix.
 
 `make check` is the gate: it regenerates and fails if the working tree differs from what's committed. Drift between spec and generated code cannot land on `main`.
 
@@ -40,21 +56,5 @@ Or `cd api` and drop the `make -C api` prefix.
 
 1. Edit `openapi.yaml`.
 2. `make -C api lint` — must pass before continuing.
-3. `make -C api generate` — produces fresh stubs in both services.
+3. `make -C api generate` — produces fresh types for both services.
 4. Commit `openapi.yaml` **together with** the regenerated files in the same change.
-
-## Why generators?
-
-| Side | Generator | Output |
-|---|---|---|
-| Backend (Python) | `fastapi-code-generator` (`fastapi-codegen`) | `APIRouter` stubs + Pydantic v2 models → `server/app/api/generated/`. Route bodies live in `server/app/api/` and are bound to the generated routers at startup. |
-| Frontend (TS) | `openapi-typescript` | Type-only file → `web-client/src/api.ts`, consumed by Redux actions. |
-
-Hand-written DTOs are forbidden (project rule). If you find yourself writing a request/response model by hand, add it to the spec instead.
-
-## SSE caveat
-
-The `/api/v1/verify` endpoint returns `text/event-stream`. JSON Schema can't express SSE frame structure, so the response body is typed as `string` and the per-event payloads are documented in the operation description. Both ends parse SSE manually:
-
-- **Backend**: `sse-starlette` in `server/app/api/verify.py`
-- **Frontend**: native `fetch` + `ReadableStream` reader in `web-client/src/store/actions/factcheckActions.js` (not `EventSource` — that's GET-only)

@@ -1,110 +1,72 @@
 # Fact-Checking
 
-Agent-driven fact-checking service. A claim is routed through three LangGraph agents — document search → evidence retrieval → claim verification — and a verdict (`SUPPORTED` / `REFUTED` / `NOT_ENOUGH_INFO`) is returned with citations. Progress streams to the UI over Server-Sent Events.
+An agent-driven fact-checking web app. You submit a natural-language claim and three LLM agents search the web, gather evidence, and return a verdict (`SUPPORTED` / `REFUTED` / `NOT_ENOUGH_INFO`) backed by citations. You watch the agents work in real time: every query, source, and judgement streams to the browser as it happens.
+
+Live at **https://factchecking.dpdns.org** (when the demo cluster is running).
+
+![Demo Animation](docs/fact-check.png)
+
+## How it works
+
+A claim flows through a LangGraph pipeline of three agents, each powered by a local LLM (Ollama):
+
+```
+            ┌──────────────────┐    ┌─────────────────────┐    ┌──────────────────────┐
+ claim ───▶ │ Document Search  │ ─▶ │ Evidence Retrieval  │ ─▶ │ Claim Verification   │ ─▶ verdict
+            │ rephrase claim   │    │ fetch pages,        │    │ judge each passage,  │    + citations
+            │ into queries,    │    │ extract relevant    │    │ majority vote        │
+            │ pick engines     │    │ passages            │    │                      │
+            └──────────────────┘    └─────────────────────┘    └──────────────────────┘
+                     ▲                        │
+                     └── retry (max 2) ◀── no evidence found
+```
+
+1. **Document Search** — the LLM rephrases the claim into 1–3 search queries and chooses search engines (Wikipedia, DuckDuckGo and Brave).
+2. **Evidence Retrieval** — candidate URLs are fetched concurrently; for each page the LLM extracts the sentences most relevant to the claim.
+3. **Claim Verification** — the LLM judges entailment per passage; a majority vote across passages produces the final verdict.
+
+If no evidence is found, the graph loops back to search (up to 2 retries) before giving up with `NOT_ENOUGH_INFO`.
+
+The pipeline streams named Server-Sent Events as it runs; the React client renders an agent timeline that fills in live, so you see *why* the verdict is what it is, not just the answer.
+
+## Design highlights
+
+- **Spec-first contract** — the whole API, including every SSE payload, is defined once in `api/openapi.yaml`; Pydantic models and TypeScript types are both generated from it, so the two ends cannot drift. → [`api/`](api/README.md)
+- **Typed SSE on both ends** — a backend registry pins each event name to its payload model, mirrored by a frontend type map with a compile-time exhaustiveness guard; adding an event without a payload breaks the build. → [`server/`](server/README.md), [`web-client/`](web-client/README.md)
+- **Agentic retry** — the LangGraph state machine loops back to search with fresh queries when retrieval comes up empty, instead of failing on the first miss. → [`server/`](server/README.md)
+- **Full IaC deployment** — Terraform-provisioned AKS behind the Kubernetes Gateway API with automatic Let's Encrypt TLS, budget alerts, and stop/start scripts. → [`infra/`](infra/README.md)
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| LLM runtime | Ollama (default model `qwen2.5:7b-instruct`) |
+| Agents | LangGraph + LangChain |
+| Backend | FastAPI · Pydantic v2 · SQLite · sse-starlette |
+| Frontend | React 18 · Redux Toolkit · MUI v5 · Vite · TypeScript (strict) |
+| Auth | Google OAuth 2.0 + JWT cookies |
+| Contract | OpenAPI 3.1 → `datamodel-codegen` (Python) + `openapi-typescript` (TS) |
+| Infra | Docker Compose (local) · Terraform + AKS + Gateway API (cloud) |
+
+## Run it locally
+
+Requires Docker with Compose v2, and **Google OAuth credentials** (the app has a login screen — create an OAuth client in [Google Cloud Console](https://console.cloud.google.com) and put the ID/secret in `server/.env`; details in [`server/README.md`](server/README.md)).
+
+```bash
+docker compose up -d --build
+# First run downloads qwen2.5:7b-instruct (~4.7 GB). A GPU helps; CPU works but is slow.
+```
+
+Open **http://localhost**. The API is at `http://localhost:8000` (Swagger UI at `/docs`).
+
+For native development with hot reload (Ollama in Docker, server/client on the host), see [`server/README.md`](server/README.md) and [`web-client/README.md`](web-client/README.md).
 
 ## Repo layout
 
 | Path | Purpose |
 |---|---|
-| [`api/`](api/README.md) | OpenAPI spec (`api/openapi.yaml`) + codegen tooling (`api/scripts/`). Single source of truth for the public contract. |
-| [`server/`](server/README.md) | FastAPI + LangGraph + Ollama backend. |
-| [`web-client/`](web-client/README.md) | React + Redux web client. |
-| `docker-compose.yml` | Full-stack Docker Compose (Ollama + server + web). |
-| [`infra/`](infra/README.md) | Cloud infrastructure (Terraform placeholder). |
-
-Information flows one-way: `api/openapi.yaml` → generators → `server/` and `web-client/`. Both ends regenerate from the spec; hand-written DTOs are forbidden.
-
-## Quick start
-
-### Prerequisites — Google OAuth credentials
-
-The app requires Google OAuth. Before running:
-
-1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → Create OAuth 2.0 Client ID (Web application)
-2. Add `http://localhost:5173/api/v1/auth/google/callback` to **Authorized redirect URIs**
-3. Copy the Client ID and Client Secret into `server/.env` (see Configuration below)
-
-### Docker (full stack)
-
-The fastest way to run everything. Requires Docker with Compose v2.
-
-```bash
-# 1. Build and start all services (Ollama + backend + frontend)
-docker compose up -d --build
-# The ollama-pull service automatically pulls qwen2.5:7b-instruct on first run.
-```
-
-The app is then at **http://localhost**. The backend API is also exposed at `http://localhost:8000`.
-
-| Port | Service |
-|---|---|
-| `80` | React frontend (nginx) |
-| `8000` | FastAPI backend |
-| `11434` | Ollama |
-
-```bash
-docker compose down        # stop, keep volumes
-docker compose down -v     # stop and delete volumes (~5–40 GB)
-```
-
-**CPU-only:** remove the `deploy.resources` block in `docker-compose.yml` under the `ollama` service.
-
-### Local dev (Ollama in Docker, server/web native)
-
-Run Ollama in Docker, then start the backend and frontend natively for faster iteration.
-
-```bash
-# 1. Start Ollama only
-docker compose up -d ollama
-docker exec -it ollama ollama pull qwen2.5:7b-instruct
-
-# 2. Backend
-cd server && cp .env.example .env   # fill in Google OAuth + secret values (see below)
-uv sync
-uv run uvicorn app.main:app --reload --port 8000   # → http://localhost:8000/docs
-
-# 3. Web client (second terminal)
-cd web-client && npm install && npm start           # → http://localhost:5173
-```
-
-See [`server/README.md`](server/README.md) and [`web-client/README.md`](web-client/README.md) for full setup, tests, and configuration.
-
-### Model recommendations
-
-| Model | VRAM | Notes |
-|---|---|---|
-| `llama3.1:70b-instruct` | ~48 GB | Best quality |
-| `qwen2.5:7b-instruct` | ~8 GB | Good enough for development |
-
-Structured output (`json_schema` mode) requires Ollama 0.3+. If verdicts are consistently `NOT_ENOUGH_INFO`, the model is usually the cause.
-
-### Configuration
-
-Key environment variables (set in `server/.env`):
-
-| Variable | Default | Description |
-|---|---|---|
-| `OLLAMA_MODEL` | — | Model tag, e.g. `qwen2.5:7b-instruct` |
-| `OLLAMA_NUM_CTX` | `8192` | Context window tokens |
-| `SEARCH_RESULTS_PER_QUERY` | `3` | Hits per search query |
-| `MAX_CONCURRENT_FETCHES` | `3` | Parallel URL fetches |
-| `BRAVE_API_KEY` | — | Optional; enables Brave search engine |
-| `GOOGLE_CLIENT_ID` | — | From Google Cloud Console OAuth client |
-| `GOOGLE_CLIENT_SECRET` | — | From Google Cloud Console OAuth client |
-| `JWT_SECRET` | — | Random secret ≥32 chars — `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
-| `SESSION_SECRET` | — | Random secret ≥32 chars (separate from JWT_SECRET) |
-| `COOKIE_SECURE` | `false` | Set `true` in production (requires HTTPS) |
-
-## API contract
-
-```bash
-make -C api generate   # regenerate server/app/api/generated/ + web-client/src/api.ts
-make -C api check      # CI gate — fails on drift
-make -C api lint       # Redocly lint only
-```
-
-## Project rules
-- **Spec-first** — every API change starts in `api/openapi.yaml`.
-- **No hand-written DTOs** — `server/app/api/generated/` is generated, never edited.
-- **Integration tests hit real APIs / DBs**, not mocks.
-- **Short branches** — merge or rebase within 2 days.
+| [`api/`](api/README.md) | OpenAPI spec + codegen tooling. Single source of truth for the public contract. |
+| [`server/`](server/README.md) | FastAPI + LangGraph + Ollama backend — agents, config, tests. |
+| [`web-client/`](web-client/README.md) | React + Redux web client — streaming, type safety. |
+| [`infra/`](infra/README.md) | Terraform (AKS cluster) + Kubernetes manifests + deployment. |
+| `docker-compose.yml` | Full-stack local run (Ollama + server + web). |
