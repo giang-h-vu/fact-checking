@@ -7,7 +7,7 @@ let refreshing: Promise<boolean> | null = null;
 
 function tryRefresh(): Promise<boolean> {
   if (!refreshing) {
-    refreshing = fetch(`${import.meta.env.VITE_API_BASE}/api/v1/auth/refresh`, {
+    refreshing = fetch("/api/v1/auth/refresh", {
       method: "POST",
       credentials: "include",
     })
@@ -38,7 +38,6 @@ const fetchWithRefresh: typeof fetch = async (input, init) => {
 };
 
 const client = createClient<paths>({
-  baseUrl: import.meta.env.VITE_API_BASE,
   credentials: "include",
   fetch: fetchWithRefresh,
 });

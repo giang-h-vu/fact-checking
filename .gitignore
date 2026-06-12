@@ -89,6 +89,7 @@ celerybeat-schedule
 
 # Environments
 .env
+.env.prod
 .venv
 env/
 venv/
@@ -154,5 +155,12 @@ server/.local/
 CLAUDE.md
 
 
+
 # Exlclude in web-client
 !web-client/src/lib/
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/terraform.tfvars
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
