@@ -1,18 +1,18 @@
-import React from 'react';
-import './App.css';
-import { BrowserRouter as Router, Route, Switch, Redirect } from "react-router-dom";
+import React from "react";
+import "./App.css";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import { Box, CircularProgress, Paper } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import Home from '~/pages/Home';
-import theme from '~/theme/index';
-import { Dashboard } from '~/components/Dashboard';
-import { HowItWorks } from '~/pages/HowItWorks';
-import History from '~/pages/History';
-import Login from '~/pages/Login';
-import type { AppDispatch } from '~/store';
-import type { RootState } from '~/store/reducers/rootReducer';
-import { fetchMe } from '~/store/actions/authActions';
+import Home from "~/pages/Home";
+import theme from "~/theme/index";
+import { Dashboard } from "~/components/Dashboard";
+import { HowItWorks } from "~/pages/HowItWorks";
+import History from "~/pages/History";
+import Login from "~/pages/Login";
+import type { AppDispatch } from "~/store";
+import type { RootState } from "~/store/reducers/rootReducer";
+import { fetchMe } from "~/store/actions/authActions";
 
 // The app shell. Login renders full-screen on its
 // own background, outside this shell.
@@ -21,11 +21,11 @@ const AppShell = () => (
     <main>
       <section className="glass">
         <Dashboard />
-        <Switch>
-          <Route exact path="/" component={Home} />
-          <Route path="/history" component={History} />
-          <Route path="/about" component={HowItWorks} />
-        </Switch>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/about" element={<HowItWorks />} />
+        </Routes>
       </section>
     </main>
     <div className="circle1"></div>
@@ -44,7 +44,7 @@ const PrivateRoute = () => {
     );
   }
   if (status === "unauthenticated") {
-    return <Redirect to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return <AppShell />;
@@ -62,10 +62,10 @@ function App() {
       <Paper>
         <div className="App">
           <Router>
-            <Switch>
-              <Route path="/login" component={Login} />
-              <Route component={PrivateRoute} />
-            </Switch>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={<PrivateRoute />} />
+            </Routes>
           </Router>
         </div>
       </Paper>

@@ -1,14 +1,14 @@
-import { NavLink } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { Avatar, Box, Button, Typography, useTheme } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import factCheckImage from '~/assets/fact-check.png';
-import timeImage from '~/assets/time.png';
-import workingsImage from '~/assets/workings.png';
-import binocularsImage from '~/assets/binoculars.png';
-import type { AppDispatch } from '~/store';
-import type { RootState } from '~/store/reducers/rootReducer';
-import { logout } from '~/store/actions/authActions';
+import { NavLink } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Avatar, Box, Button, Typography, useTheme } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import factCheckImage from "~/assets/fact-check.png";
+import timeImage from "~/assets/time.png";
+import workingsImage from "~/assets/workings.png";
+import binocularsImage from "~/assets/binoculars.png";
+import type { AppDispatch } from "~/store";
+import type { RootState } from "~/store/reducers/rootReducer";
+import { logout } from "~/store/actions/authActions";
 
 export const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,7 +24,7 @@ export const Dashboard = () => {
         <Typography variant="body2">Evaluate statements to determine their validity.</Typography>
       </div>
       <div className="links">
-        <NavLink className="link" exact to="/">
+        <NavLink className="link" end to="/">
           <img src={binocularsImage} alt="Fact Checking" />
           <Typography variant="h2">Fact Check</Typography>
         </NavLink>
@@ -39,10 +39,23 @@ export const Dashboard = () => {
       </div>
 
       {user && (
-        <Box sx={{ mt: "auto", p: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{
+            mt: "auto",
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
           <Avatar src={user.picture ?? undefined} alt={user.name} sx={{ width: 48, height: 48 }} />
-          <Typography variant="subtitle2" sx={{ color: text.primary }}>{user.name}</Typography>
-          <Typography variant="caption" sx={{ color: text.secondary }}>{user.email}</Typography>
+          <Typography variant="subtitle2" sx={{ color: text.primary }}>
+            {user.name}
+          </Typography>
+          <Typography variant="caption" sx={{ color: text.secondary }}>
+            {user.email}
+          </Typography>
           <Button
             size="small"
             startIcon={<LogoutIcon />}
