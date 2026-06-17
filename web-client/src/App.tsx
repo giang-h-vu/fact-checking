@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import { Box, CircularProgress, Paper } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
@@ -61,12 +61,10 @@ function App() {
     <ThemeProvider theme={theme}>
       <Paper>
         <div className="App">
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/*" element={<PrivateRoute />} />
-            </Routes>
-          </Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/*" element={<PrivateRoute />} />
+          </Routes>
         </div>
       </Paper>
     </ThemeProvider>
