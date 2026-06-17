@@ -1,0 +1,33 @@
+name: Test Agent Tools (real external APIs)
+# Hits real external APIs
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  test-tools:
+    name: Backend tool tests (real APIs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync backend deps
+        working-directory: server
+        run: uv sync --frozen
+
+      - name: Test - tools
+        working-directory: server
+        env:
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+        run: uv run pytest tests/test_tools.py

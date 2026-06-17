@@ -6,9 +6,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # Publishing a GitHub Release also triggers CI, which runs the full test suite.
-  release:
-    types: [published]
 
 # Cancel previous runs on the same ref.
 concurrency:
@@ -84,12 +81,6 @@ jobs:
       - name: Test - api
         working-directory: server
         run: uv run pytest tests/test_api.py
-
-      # test_tools hits real external APIs. Run it on demand (workflow_dispatch) or for releases, but not on every PR.
-      - name: Test - tools (real external APIs; manual or release)
-        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'release' }}
-        working-directory: server
-        run: uv run pytest tests/test_tools.py
 
   # Frontend: type-checked build + vitest
   frontend:
