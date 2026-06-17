@@ -4,10 +4,10 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from sqlalchemy import delete, func
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import delete, func
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api import auth as auth_handler
@@ -25,11 +25,10 @@ logging.basicConfig(level=logging.INFO)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_db()
     async with session_scope() as session:
-        await session.execute(
-            delete(RefreshToken).where(RefreshToken.expires_at < func.now())
-        )
+        await session.execute(delete(RefreshToken).where(RefreshToken.expires_at < func.now()))
         await session.commit()
     yield
+
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -50,6 +49,7 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
 
 @app.get("/health", include_in_schema=False)
 async def health() -> JSONResponse:
