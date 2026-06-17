@@ -1,0 +1,118 @@
+name: CI
+
+# OpenAPI lint -> codegen drift check -> build -> tests, for every PR and push to main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Publishing a GitHub Release also triggers CI, which runs the full test suite.
+  release:
+    types: [published]
+
+# Cancel previous runs on the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-contract:
+    name: API spec lint + codegen drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Sync server deps
+      - name: Sync backend deps
+        working-directory: server
+        run: uv sync --frozen
+
+      # Fails if the spec is malformed OR generated code drifted from the spec.
+      - name: Lint spec and verify no codegen drift
+        run: make -C api check
+
+  # Backend: ruff + mypy + pytest
+  backend:
+    name: Backend lint + typecheck + test
+    needs: api-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync deps (incl. dev group)
+        working-directory: server
+        run: uv sync --frozen
+
+      # `!cancelled()` makes lint run regardless of any prior failure.
+      - name: Lint (ruff)
+        if: ${{ !cancelled() }}
+        working-directory: server
+        run: uv run ruff check .
+
+      - name: Typecheck (mypy)
+        working-directory: server
+        run: uv run mypy app
+
+      - name: Test - auth
+        working-directory: server
+        run: uv run pytest tests/test_auth.py
+
+      - name: Test - api
+        working-directory: server
+        run: uv run pytest tests/test_api.py
+
+      # test_tools hits real external APIs. Run it on demand (workflow_dispatch) or for releases, but not on every PR.
+      - name: Test - tools (real external APIs; manual or release)
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'release' }}
+        working-directory: server
+        run: uv run pytest tests/test_tools.py
+
+  # Frontend: type-checked build + vitest
+  frontend:
+    name: Frontend build + test
+    needs: api-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web-client/package-lock.json
+
+      - name: Install deps
+        working-directory: web-client
+        run: npm ci
+
+      - name: Build (type-checked)
+        working-directory: web-client
+        run: npm run build
+
+      - name: Test
+        working-directory: web-client
+        run: npm test -- --run
