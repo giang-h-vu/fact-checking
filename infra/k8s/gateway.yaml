@@ -20,5 +20,5 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: fact-checking-tls   # Secret cert-manager will create
+          - name: fact-checking-tls # Secret cert-manager will create
             kind: Secret

@@ -19,7 +19,7 @@ from app.platform.config import get_settings
 
 
 class AccessTokenPayload(TypedDict):
-    sub: str    # user_id as string (JWT standard claim)
+    sub: str  # user_id as string (JWT standard claim)
     email: str
     iat: datetime
     exp: datetime
@@ -35,7 +35,9 @@ def mint_access_token(user_id: int, email: str) -> str:
         "iat": now,
         "exp": now + timedelta(seconds=settings.access_token_ttl_seconds),
     }
-    return jwt.encode(cast(dict[str, Any], payload), settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        cast(dict[str, Any], payload), settings.jwt_secret, algorithm=settings.jwt_algorithm
+    )
 
 
 def decode_access_token(token: str) -> AccessTokenPayload | None:

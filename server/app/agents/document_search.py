@@ -57,6 +57,7 @@ Only use engine names from the available engines list. If brave is not listed,
 use the other web engine that is available instead.
 """
 
+
 class PlannedSearch(BaseModel):
     query: str
     engine: str
@@ -96,9 +97,7 @@ def _resolve_engine(requested: str, available: list[SearchSource]) -> SearchSour
     return None
 
 
-async def _plan(
-    claim: str, prefer_source: str, tried: list[str]
-) -> list[tuple[str, SearchSource]]:
+async def _plan(claim: str, prefer_source: str, tried: list[str]) -> list[tuple[str, SearchSource]]:
     """Return up to MAX_SEARCHES (query, engine) pairs — each query routed to one engine."""
     available_engines = _available_engines()
     user = (
@@ -120,7 +119,7 @@ async def _plan(
         )
         if not isinstance(result, SearchPlan):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
-        
+
         log.info("LLM planned searches: %s", [(p.query, p.engine) for p in result.searches])
 
         resolved = (

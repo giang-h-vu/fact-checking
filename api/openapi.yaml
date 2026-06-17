@@ -30,10 +30,10 @@ paths:
       operationId: authGoogleLogin
       summary: Begin Google OAuth — redirect the browser to Google's consent screen
       responses:
-        '302':
+        "302":
           description: Redirect to Google's OAuth 2.0 authorization endpoint
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "500":
+          $ref: "#/components/responses/ServerError"
 
   /api/v1/auth/google/callback:
     get:
@@ -50,12 +50,12 @@ paths:
           required: false
           schema: { type: string }
       responses:
-        '302':
+        "302":
           description: |
             Authentication succeeded. Sets httpOnly `access_token` and
             `refresh_token` cookies and redirects to the frontend.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/auth/refresh:
     post:
@@ -66,10 +66,10 @@ paths:
         Reads the httpOnly `refresh_token` cookie, rotates it (the old token is
         revoked and a new one issued), and sets a new `access_token` cookie.
       responses:
-        '204':
+        "204":
           description: New `access_token` and `refresh_token` cookies set
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/auth/logout:
     post:
@@ -77,10 +77,10 @@ paths:
       operationId: authLogout
       summary: Revoke the current refresh token and clear session cookies
       responses:
-        '204':
+        "204":
           description: Session cookies cleared
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "500":
+          $ref: "#/components/responses/ServerError"
 
   /api/v1/auth/me:
     get:
@@ -90,14 +90,14 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        "200":
           description: The authenticated user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/verify:
     post:
@@ -125,23 +125,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyRequest'
+              $ref: "#/components/schemas/VerifyRequest"
       responses:
-        '200':
+        "200":
           description: SSE stream of agent progress events
           content:
             text/event-stream:
               schema:
                 type: string
                 description: "Concatenated SSE frames (event/data lines per WHATWG HTML Living Standard §9.2)"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/ServerError"
 
   /api/v1/history:
     get:
@@ -160,20 +160,20 @@ paths:
             maximum: 100
             default: 20
       responses:
-        '200':
+        "200":
           description: Most recent verification requests, newest first
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HistoryResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '500':
-          $ref: '#/components/responses/ServerError'
+                $ref: "#/components/schemas/HistoryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/ServerError"
 
 components:
   securitySchemes:
@@ -188,9 +188,9 @@ components:
       type: object
       required: [id, email, name]
       properties:
-        id:      { type: integer }
-        email:   { type: string, format: email }
-        name:    { type: string }
+        id: { type: integer }
+        email: { type: string, format: email }
+        name: { type: string }
         picture: { type: string, format: uri }
 
     VerifyRequest:
@@ -226,8 +226,8 @@ components:
       type: object
       required: [url, title, source]
       properties:
-        url:    { type: string, format: uri }
-        title:  { type: string }
+        url: { type: string, format: uri }
+        title: { type: string }
         snippet: { type: string }
         source: { type: string, enum: [duckduckgo, brave, wikipedia] }
 
@@ -235,23 +235,23 @@ components:
       type: object
       required: [url, title, passage, label]
       properties:
-        url:     { type: string, format: uri }
-        title:   { type: string }
+        url: { type: string, format: uri }
+        title: { type: string }
         passage: { type: string }
-        label:   { $ref: '#/components/schemas/Verdict' }
+        label: { $ref: "#/components/schemas/Verdict" }
         reasoning: { type: string }
 
     HistoryItem:
       type: object
       required: [id, claim, datetime, verdict]
       properties:
-        id:       { type: integer }
-        claim:    { type: string }
+        id: { type: integer }
+        claim: { type: string }
         datetime: { type: string, format: date-time }
-        verdict:  { $ref: '#/components/schemas/Verdict' }
+        verdict: { $ref: "#/components/schemas/Verdict" }
         citations:
           type: array
-          items: { $ref: '#/components/schemas/Citation' }
+          items: { $ref: "#/components/schemas/Citation" }
 
     HistoryResponse:
       type: object
@@ -259,19 +259,19 @@ components:
       properties:
         items:
           type: array
-          items: { $ref: '#/components/schemas/HistoryItem' }
+          items: { $ref: "#/components/schemas/HistoryItem" }
 
     Error:
       type: object
       required: [code, message]
       properties:
-        code:    { type: string }
+        code: { type: string }
         message: { type: string }
         details: { type: object, additionalProperties: true }
 
     # --- SSE event payloads ---------------------------------------------------
     # The `data` JSON of each named SSE event.
-    # These exist so both ends generate the wire shapes 
+    # These exist so both ends generate the wire shapes
     # Do not reuse them as internal pipeline state.
     SearchStartedPayload:
       type: object
@@ -287,51 +287,51 @@ components:
       properties:
         items:
           type: array
-          items: { $ref: '#/components/schemas/SearchCandidate' }
+          items: { $ref: "#/components/schemas/SearchCandidate" }
 
     PassageFoundPayload:
       type: object
       required: [url, title, passage]
       properties:
-        url:     { type: string, format: uri }
-        title:   { type: string }
+        url: { type: string, format: uri }
+        title: { type: string }
         passage: { type: string }
 
     PassageVerdictPayload:
       type: object
       required: [url, label, reasoning]
       properties:
-        url:       { type: string, format: uri }
-        label:     { $ref: '#/components/schemas/Verdict' }
+        url: { type: string, format: uri }
+        label: { $ref: "#/components/schemas/Verdict" }
         reasoning: { type: string }
 
     FinalVerdictPayload:
       type: object
       required: [verdict, citations]
       properties:
-        verdict:   { $ref: '#/components/schemas/Verdict' }
+        verdict: { $ref: "#/components/schemas/Verdict" }
         citations:
           type: array
-          items: { $ref: '#/components/schemas/Citation' }
+          items: { $ref: "#/components/schemas/Citation" }
 
   responses:
     BadRequest:
       description: Invalid request payload
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
     Unauthorized:
       description: Missing or invalid authentication
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
     UnprocessableEntity:
       description: Request body failed schema validation
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }
     ServerError:
       description: Internal server error
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: "#/components/schemas/Error" }

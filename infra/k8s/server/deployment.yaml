@@ -20,9 +20,9 @@ spec:
             - containerPort: 8000
           envFrom:
             - configMapRef:
-                name: server-config   # non-sensitive config
+                name: server-config # non-sensitive config
             - secretRef:
-                name: app-secrets     # sensitive values
+                name: app-secrets # sensitive values
           resources:
             requests:
               memory: "256Mi"

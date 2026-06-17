@@ -53,7 +53,7 @@ async def _fetch_one(url: str, sem: Semaphore) -> FetchedPage | None:
         except Exception as e:
             log.warning("Fetch failed for %s: %s", url, e)
             return None
-        
+
 
 async def _fetch_all(urls: list[str]) -> list[FetchedPage]:
     settings = get_settings()
@@ -75,9 +75,7 @@ async def _extract_passage(claim: str, page: FetchedPage) -> str | None:
         if not isinstance(result, PassageExtraction):
             raise TypeError(f"Unexpected structured output type: {type(result)}")
     except Exception:
-        log.warning(
-            "Passage extraction structured output failed for %s", page.url, exc_info=True
-        )
+        log.warning("Passage extraction structured output failed for %s", page.url, exc_info=True)
         return None
     return result.passage or None
 
@@ -90,7 +88,7 @@ async def evidence_retrieval_agent(state: FactCheckState) -> RetrievalOutput:
     log.info("Fetched %d/%d pages", len(pages), len(state.candidates))
 
     passages = await gather(*(_extract_passage(state.claim, page) for page in pages))
-    evidence : list[FetchedPage] = []
+    evidence: list[FetchedPage] = []
     for page, passage in zip(pages, passages, strict=False):
         if passage:
             evidence.append(FetchedPage(url=page.url, title=page.title, text=passage))

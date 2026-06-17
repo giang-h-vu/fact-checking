@@ -4,7 +4,7 @@ metadata:
   name: server-config
   namespace: fact-checking
 data:
-  OLLAMA_HOST: "http://ollama:11434"           # DNS name of the ollama Service
+  OLLAMA_HOST: "http://ollama:11434" # DNS name of the ollama Service
   OLLAMA_MODEL: "qwen2.5:7b-instruct"
   OLLAMA_NUM_CTX: "8192"
   DATABASE_URL: "sqlite+aiosqlite:////app/data/fact_checking.db"

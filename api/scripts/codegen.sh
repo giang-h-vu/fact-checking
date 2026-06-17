@@ -23,7 +23,7 @@ if command -v uv >/dev/null 2>&1; then
          --output-model-type pydantic_v2.BaseModel \
          --use-annotated \
          --target-python-version 3.11 \
-         --disable-timestamp 
+         --disable-timestamp
   )
 else
   echo "  (uv not available — install from https://docs.astral.sh/uv/ and re-run)"

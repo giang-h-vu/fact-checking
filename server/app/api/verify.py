@@ -174,14 +174,19 @@ async def _event_stream(req: VerifyRequest, user_id: int) -> AsyncIterator[dict[
                         ),
                     )
         if verification is not None:
-            await _persist(initial.model_copy(update={
-                "final_verdict": verification.final_verdict,
-                "citations": verification.citations,
-                "passage_verdicts": verification.passage_verdicts,
-            }), user_id)
+            await _persist(
+                initial.model_copy(
+                    update={
+                        "final_verdict": verification.final_verdict,
+                        "citations": verification.citations,
+                        "passage_verdicts": verification.passage_verdicts,
+                    }
+                ),
+                user_id,
+            )
         else:
             raise RuntimeError("Verification did not complete")
-        
+
         yield sse(SseEventType.done)
 
     except Exception as e:

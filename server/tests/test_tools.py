@@ -1,5 +1,5 @@
 """Integration tests for the agent tools.
-Wikipedia, DuckDuckGo and fetch_url hit public endpoints unconditionally; 
+Wikipedia, DuckDuckGo and fetch_url hit public endpoints unconditionally;
 Brave skips when no API key is in env.
 
 Tools are async LangChain tools, so they are exercised via ``.ainvoke`` and

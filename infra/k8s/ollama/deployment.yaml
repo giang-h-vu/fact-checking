@@ -20,14 +20,19 @@ spec:
             - containerPort: 11434
           resources:
             requests:
-              memory: "6Gi"   # leaves ~2Gi for other pods on the 8GB node
+              memory: "6Gi" # leaves ~2Gi for other pods on the 8GB node
               cpu: "500m"
           lifecycle:
             postStart:
               exec:
                 # Pulls the model into /root/.ollama (on the PVC) on first start.
                 # Subsequent starts skip the download — already on disk.
-                command: ["/bin/sh", "-c", "sleep 5 && ollama pull qwen2.5:7b-instruct"]
+                command:
+                  [
+                    "/bin/sh",
+                    "-c",
+                    "sleep 5 && ollama pull qwen2.5:7b-instruct",
+                  ]
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama

@@ -16,6 +16,8 @@ _wiki = MediaWiki(user_agent="fact-checking-tool/1.0")
 
 # The search API returns snippets as HTML (highlight <span>s + escaped entities).
 _TAGS = re.compile(r"<[^>]+>")
+
+
 def _clean(snippet: str) -> str:
     return html.unescape(_TAGS.sub("", snippet)).strip()
 
@@ -30,13 +32,7 @@ def _search_sync(query: str, count: int) -> list[SearchHit]:
     # Call the action API directly rather than _wiki.search() to get the snippet;
     # titles have no URL field, hence reconstructing the canonical article URL.
     resp = _wiki.wiki_request(
-        {
-            "action": "query", 
-            "list": "search", 
-            "srsearch": query, 
-            "srlimit": count, 
-            "format": "json"
-        }
+        {"action": "query", "list": "search", "srsearch": query, "srlimit": count, "format": "json"}
     )
     hits: list[SearchHit] = []
     for r in resp.get("query", {}).get("search", []):
@@ -45,7 +41,9 @@ def _search_sync(query: str, count: int) -> list[SearchHit]:
             continue
         url = "https://en.wikipedia.org/wiki/" + title.replace(" ", "_")
         hits.append(
-            SearchHit(url=url, title=title, snippet=_clean(r.get("snippet", "")), source="wikipedia")
+            SearchHit(
+                url=url, title=title, snippet=_clean(r.get("snippet", "")), source="wikipedia"
+            )
         )
     return hits
 

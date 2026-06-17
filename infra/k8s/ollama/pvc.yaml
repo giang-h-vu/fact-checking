@@ -5,7 +5,7 @@ metadata:
   namespace: fact-checking
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: managed-csi   # Azure Managed Disk (default on AKS)
+  storageClassName: managed-csi # Azure Managed Disk (default on AKS)
   resources:
     requests:
       storage: 10Gi

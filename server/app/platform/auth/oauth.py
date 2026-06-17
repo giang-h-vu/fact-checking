@@ -14,6 +14,7 @@ from app.platform.config import get_settings
 
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
+
 @lru_cache
 def get_oauth() -> OAuth:
     settings = get_settings()

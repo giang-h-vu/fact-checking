@@ -4,7 +4,7 @@ rules:
   # SSE response bodies are typed as `string` (JSON Schema can't express
   # event/data frames), so per-event payload schemas (SearchCandidate, Citation,
   # HistoryItem, Error) are referenced from documentation, not from response
-  # bodies. 
+  # bodies.
   no-unused-components: off
 
   security-defined: off

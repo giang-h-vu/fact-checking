@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     # Signs the Starlette session that holds Authlib's OAuth state/nonce.
     session_secret: str = ""
 
-    access_token_ttl_seconds: int = 900          # 15 minutes
-    refresh_token_ttl_seconds: int = 1_209_600   # 14 days
+    access_token_ttl_seconds: int = 900  # 15 minutes
+    refresh_token_ttl_seconds: int = 1_209_600  # 14 days
 
     # Cookies: Secure should be True behind HTTPS in production.
     cookie_secure: bool = False

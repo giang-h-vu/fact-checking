@@ -64,7 +64,7 @@ class FactCheckState(SearchOutput, RetrievalOutput, VerificationOutput):
     retries: int = 0
     error: str | None = None
 
-    # Override SearchOutput.search_queries with an append reducer so the planner 
+    # Override SearchOutput.search_queries with an append reducer so the planner
     # reads the full history and avoids repeats.
     # NOTE node return = this attempt; state value = all attempts.
     search_queries: Annotated[list[str], operator.add] = []
