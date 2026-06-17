@@ -10,15 +10,15 @@ React + Redux web client for the fact-checking service. Submits a claim to the b
 
 The reducer (`src/store/reducers/factcheckReducer.ts`) accumulates state incrementally:
 
-| SSE event | Reducer action |
-|---|---|
-| `search_started` | append queries to `progress.queries` |
-| `candidates_found` | append to `progress.candidates` |
-| `passage_found` | append to `progress.passages` |
-| `passage_verdict` | append to `progress.passageVerdicts` |
-| `final_verdict` | set `verdict` + `citations` |
-| `done` | set `status = done` |
-| `error` | set `error` message |
+| SSE event          | Reducer action                       |
+| ------------------ | ------------------------------------ |
+| `search_started`   | append queries to `progress.queries` |
+| `candidates_found` | append to `progress.candidates`      |
+| `passage_found`    | append to `progress.passages`        |
+| `passage_verdict`  | append to `progress.passageVerdicts` |
+| `final_verdict`    | set `verdict` + `citations`          |
+| `done`             | set `status = done`                  |
+| `error`            | set `error` message                  |
 
 `AgentTimeline.tsx` renders `progress.*` as it arrives; `Home.tsx` shows the verdict block once `final_verdict` lands.
 
@@ -88,12 +88,12 @@ src/
 
 ## Routes
 
-| Path | Page |
-|---|---|
-| `/` | `Home.tsx` — search + live progress + final verdict |
-| `/history` | `History.tsx` — past verifications |
+| Path        | Page                                                        |
+| ----------- | ----------------------------------------------------------- |
+| `/`         | `Home.tsx` — search + live progress + final verdict         |
+| `/history`  | `History.tsx` — past verifications                          |
 | `/workings` | `HowItWorks.tsx` — static explanation of the agent pipeline |
-| `/login` | `Login.tsx` — Google OAuth sign-in |
+| `/login`    | `Login.tsx` — Google OAuth sign-in                          |
 
 ## Regenerating types
 

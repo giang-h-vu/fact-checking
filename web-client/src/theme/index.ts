@@ -1,15 +1,14 @@
-
 // Self-hosted Poppins. typography.fontFamily references
 // Poppins, so the weights it uses must actually be loaded here or the browser
 // silently falls back and the type scale renders in the wrong font.
-import '@fontsource/poppins/400.css';
-import '@fontsource/poppins/500.css';
-import '@fontsource/poppins/600.css';
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
 
-import { createTheme } from '@mui/material/styles';
-import { common } from '@mui/material/colors';
-import shadows from '~/theme/shadows';
-import typography from '~/theme/typography';
+import { createTheme } from "@mui/material/styles";
+import { common } from "@mui/material/colors";
+import shadows from "~/theme/shadows";
+import typography from "~/theme/typography";
 
 const theme = createTheme({
   palette: {
@@ -31,8 +30,8 @@ const theme = createTheme({
     // Domain tokens for the three verdict states. Verdict is a first-class concept in this app so it
     // gets its own named palette rather than borrowing the semantic one.
     verdict: {
-      SUPPORTED:       { main: "#2e7d32", contrastText: common.white },
-      REFUTED:         { main: "#c62828", contrastText: common.white },
+      SUPPORTED: { main: "#2e7d32", contrastText: common.white },
+      REFUTED: { main: "#c62828", contrastText: common.white },
       NOT_ENOUGH_INFO: { main: "#757575", contrastText: common.white },
     },
     // Signature teal used by the sidebar/nav and the login screen.

@@ -1,6 +1,14 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { List, ListItem, ListItemText, Chip, Typography, LinearProgress, Fade } from "@mui/material";
+import {
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
+  Typography,
+  LinearProgress,
+  Fade,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import type { RootState } from "~/store/reducers/rootReducer";
 import { CardBox, PassageSpan } from "~/components/StyledWrappers";
@@ -11,13 +19,19 @@ const Section = styled("div")(({ theme }) => ({
 }));
 
 export default function AgentTimeline() {
-  const progress       = useSelector((state: RootState) => state.factcheck.progress);
+  const progress = useSelector((state: RootState) => state.factcheck.progress);
   const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
-  const verdict        = useSelector((state: RootState) => state.factcheck.verdict);
+  const verdict = useSelector((state: RootState) => state.factcheck.verdict);
 
   const { queries, candidates, passages, passageVerdicts } = progress;
 
-  if (!queries.length && !candidates.length && !passages.length && !passageVerdicts.length && !verdict) {
+  if (
+    !queries.length &&
+    !candidates.length &&
+    !passages.length &&
+    !passageVerdicts.length &&
+    !verdict
+  ) {
     return null;
   }
 
@@ -45,7 +59,11 @@ export default function AgentTimeline() {
               {candidates.map((c, i) => (
                 <ListItem key={i} disableGutters>
                   <ListItemText
-                    primary={<a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>}
+                    primary={
+                      <a href={c.url} target="_blank" rel="noreferrer">
+                        {c.title || c.url}
+                      </a>
+                    }
                     secondary={`source: ${c.source}`}
                   />
                 </ListItem>
@@ -76,7 +94,9 @@ export default function AgentTimeline() {
       {passageVerdicts.length > 0 && (
         <Fade in appear>
           <Section>
-            <Typography variant="subtitle2">Per-passage verdicts ({passageVerdicts.length})</Typography>
+            <Typography variant="subtitle2">
+              Per-passage verdicts ({passageVerdicts.length})
+            </Typography>
             <List dense>
               {passageVerdicts.map((v, i) => (
                 <ListItem key={i} disableGutters>

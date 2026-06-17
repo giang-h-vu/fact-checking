@@ -46,7 +46,6 @@ main {
   max-width: 26rem;
 }
 
-
 .links {
   margin: 0 0;
 }
@@ -74,13 +73,13 @@ main {
   margin-top: 0.5rem;
 }
 
-
 .link img {
   height: 2rem;
   filter: brightness(50%);
   opacity: 0.7;
-  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .link {
@@ -91,9 +90,10 @@ main {
   text-decoration: none;
   /* Right side rounded corners, left size square with stripe */
   border-radius: 0 0.75rem 0.75rem 0;
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              background 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    background 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .link h2 {
@@ -138,8 +138,9 @@ main {
 .link.active:hover {
   background: linear-gradient(to left top, rgba(16, 161, 157, 0.3), rgba(16, 161, 157, 0.1));
   transform: none;
-  box-shadow: inset 4px 0 0 0 rgb(16, 161, 157),
-              6px 6px 20px rgba(16, 161, 157, 0.18);
+  box-shadow:
+    inset 4px 0 0 0 rgb(16, 161, 157),
+    6px 6px 20px rgba(16, 161, 157, 0.18);
 }
 
 .search-and-more {
@@ -153,7 +154,6 @@ main {
   width: 100%;
   max-width: 80rem;
   margin: clamp(1.5rem, 3vw, 3rem) auto 1rem;
-  
 }
 
 /* Home page scrolls its own content so .glass doesn't stretch beyond the viewport. */

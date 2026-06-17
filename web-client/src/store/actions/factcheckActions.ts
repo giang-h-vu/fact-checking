@@ -4,26 +4,26 @@ import client from "~/lib/client";
 import type { VerifyRequest, SseEventType, HistoryItem } from "~/types/api";
 import type { SsePayloadMap } from "~/types/sse";
 
-export const WILL_CHECK_FACT     = "AGENT/WILL_CHECK_FACT" as const;
-export const SEARCH_STARTED      = "AGENT/SEARCH_STARTED" as const;
-export const CANDIDATES_FOUND    = "AGENT/CANDIDATES_FOUND" as const;
-export const PASSAGE_FOUND       = "AGENT/PASSAGE_FOUND" as const;
-export const PASSAGE_VERDICT     = "AGENT/PASSAGE_VERDICT" as const;
-export const FINAL_VERDICT       = "AGENT/FINAL_VERDICT" as const;
-export const STREAM_DONE         = "AGENT/STREAM_DONE" as const;
-export const STREAM_ERROR        = "AGENT/STREAM_ERROR" as const;
-export const WILL_GET_HISTORY    = "AGENT/WILL_GET_HISTORY" as const;
+export const WILL_CHECK_FACT = "AGENT/WILL_CHECK_FACT" as const;
+export const SEARCH_STARTED = "AGENT/SEARCH_STARTED" as const;
+export const CANDIDATES_FOUND = "AGENT/CANDIDATES_FOUND" as const;
+export const PASSAGE_FOUND = "AGENT/PASSAGE_FOUND" as const;
+export const PASSAGE_VERDICT = "AGENT/PASSAGE_VERDICT" as const;
+export const FINAL_VERDICT = "AGENT/FINAL_VERDICT" as const;
+export const STREAM_DONE = "AGENT/STREAM_DONE" as const;
+export const STREAM_ERROR = "AGENT/STREAM_ERROR" as const;
+export const WILL_GET_HISTORY = "AGENT/WILL_GET_HISTORY" as const;
 export const GET_HISTORY_SUCCESS = "AGENT/GET_HISTORY_SUCCESS" as const;
 export const GET_HISTORY_FAILURE = "AGENT/GET_HISTORY_FAILURE" as const;
 
 const SSE_TO_ACTION: Record<SseEventType, string> = {
-  search_started:    SEARCH_STARTED,
-  candidates_found:  CANDIDATES_FOUND,
-  passage_found:     PASSAGE_FOUND,
-  passage_verdict:   PASSAGE_VERDICT,
-  final_verdict:     FINAL_VERDICT,
-  done:              STREAM_DONE,
-  error:             STREAM_ERROR,
+  search_started: SEARCH_STARTED,
+  candidates_found: CANDIDATES_FOUND,
+  passage_found: PASSAGE_FOUND,
+  passage_verdict: PASSAGE_VERDICT,
+  final_verdict: FINAL_VERDICT,
+  done: STREAM_DONE,
+  error: STREAM_ERROR,
 };
 
 /**
@@ -48,16 +48,18 @@ export const checkFact = ({ claim, prefer_source = "auto" }: VerifyRequest) => {
   return async (dispatch: Dispatch): Promise<void> => {
     dispatch({ type: WILL_CHECK_FACT, claim });
 
-    const { data: stream, response } = await client.POST("/api/v1/verify", {
-      body: { claim, prefer_source },
-      parseAs: "stream",
-      headers: { 
-        Accept: "text/event-stream" 
-      },
-    }).catch((e: Error) => {
-      dispatch({ type: STREAM_ERROR, data: { message: e.message } });
-      return { data: null, response: null };
-    });
+    const { data: stream, response } = await client
+      .POST("/api/v1/verify", {
+        body: { claim, prefer_source },
+        parseAs: "stream",
+        headers: {
+          Accept: "text/event-stream",
+        },
+      })
+      .catch((e: Error) => {
+        dispatch({ type: STREAM_ERROR, data: { message: e.message } });
+        return { data: null, response: null };
+      });
 
     if (!response?.ok || !stream) {
       dispatch({ type: STREAM_ERROR, data: { message: `HTTP ${response?.status ?? "unknown"}` } });
@@ -90,8 +92,11 @@ function dispatchEvent(dispatch: Dispatch, message: EventSourceMessage): void {
 
   let data: unknown = null;
   if (message.data) {
-    try { data = JSON.parse(message.data); }
-    catch { data = { raw: message.data }; }
+    try {
+      data = JSON.parse(message.data);
+    } catch {
+      data = { raw: message.data };
+    }
   }
   dispatch({ type: actionType, data });
 }

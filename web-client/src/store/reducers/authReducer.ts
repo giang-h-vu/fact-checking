@@ -1,8 +1,6 @@
 import type { Reducer } from "@reduxjs/toolkit";
 import type { User } from "~/types/api";
-import {
-  FETCH_ME_SUCCESS, FETCH_ME_FAILURE, LOGOUT,
-} from "~/store/actions/authActions";
+import { FETCH_ME_SUCCESS, FETCH_ME_FAILURE, LOGOUT } from "~/store/actions/authActions";
 import type { AuthAction } from "~/store/actions/authActions";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
@@ -19,10 +17,7 @@ const initState: AuthState = {
   status: "loading",
 };
 
-const authReducer = (
-  state: AuthState = initState,
-  action: AuthAction,
-): AuthState => {
+const authReducer = (state: AuthState = initState, action: AuthAction): AuthState => {
   switch (action.type) {
     case FETCH_ME_SUCCESS:
       return { user: action.data, status: "authenticated" };

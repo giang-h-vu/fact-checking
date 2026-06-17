@@ -10,10 +10,10 @@ import { CardBox, CitationBox, PassageText } from "~/components/StyledWrappers";
 import { verdictLabel } from "~/utils/verdict";
 
 export default function Home() {
-  const claim          = useSelector((state: RootState) => state.factcheck.claim);
-  const verdict        = useSelector((state: RootState) => state.factcheck.verdict);
-  const citations      = useSelector((state: RootState) => state.factcheck.citations);
-  const error          = useSelector((state: RootState) => state.factcheck.error);
+  const claim = useSelector((state: RootState) => state.factcheck.claim);
+  const verdict = useSelector((state: RootState) => state.factcheck.verdict);
+  const citations = useSelector((state: RootState) => state.factcheck.citations);
+  const error = useSelector((state: RootState) => state.factcheck.error);
   const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
   const { palette } = useTheme();
   const resultsRef = React.useRef<HTMLDivElement>(null);
@@ -27,7 +27,9 @@ export default function Home() {
   return (
     <div className="search-and-more home-page">
       <Grid container direction="row" alignItems="stretch" spacing={1} sx={{ mb: "1rem" }}>
-        <Grid item xs={12}><SearchInput /></Grid>
+        <Grid item xs={12}>
+          <SearchInput />
+        </Grid>
 
         {error && (
           <Grid item xs={12}>
@@ -37,26 +39,42 @@ export default function Home() {
           </Grid>
         )}
 
-        <Grid item xs={12} ref={resultsRef}><AgentTimeline /></Grid>
+        <Grid item xs={12} ref={resultsRef}>
+          <AgentTimeline />
+        </Grid>
 
         {verdict && (
           <Grid item xs={12}>
             <CardBox>
-              <Typography variant="subtitle2" color={palette.text.secondary}>Claim</Typography>
-              <Typography variant="body1" gutterBottom>"{claim}"</Typography>
-              <VerdictChip verdict={verdict} label={`Verdict: ${verdictLabel(verdict)}`} sx={{ fontSize: "1rem" }} />
+              <Typography variant="subtitle2" color={palette.text.secondary}>
+                Claim
+              </Typography>
+              <Typography variant="body1" gutterBottom>
+                "{claim}"
+              </Typography>
+              <VerdictChip
+                verdict={verdict}
+                label={`Verdict: ${verdictLabel(verdict)}`}
+                sx={{ fontSize: "1rem" }}
+              />
             </CardBox>
 
             {citations.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ ml: "6px" }}>Citations</Typography>
+                <Typography variant="h6" sx={{ ml: "6px" }}>
+                  Citations
+                </Typography>
                 {citations.map((c: Citation, i: number) => (
                   <CitationBox key={i}>
                     <VerdictChip verdict={c.label} size="small" sx={{ mr: 1 }} />
-                    <a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a>
+                    <a href={c.url} target="_blank" rel="noreferrer">
+                      {c.title || c.url}
+                    </a>
                     <PassageText>"{c.passage}"</PassageText>
                     {c.reasoning && (
-                      <Typography variant="caption" color={palette.text.secondary}>{c.reasoning}</Typography>
+                      <Typography variant="caption" color={palette.text.secondary}>
+                        {c.reasoning}
+                      </Typography>
                     )}
                   </CitationBox>
                 ))}

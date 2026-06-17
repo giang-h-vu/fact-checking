@@ -1,9 +1,18 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  Grid, TextField, IconButton, InputAdornment, Button,
-  FormControl, MenuItem, Select, InputLabel,
-  Collapse, Box, Link as MuiLink,
+  Grid,
+  TextField,
+  IconButton,
+  InputAdornment,
+  Button,
+  FormControl,
+  MenuItem,
+  Select,
+  InputLabel,
+  Collapse,
+  Box,
+  Link as MuiLink,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -31,25 +40,27 @@ const AdvancedToggle = styled(MuiLink)(({ theme }) => ({
 }));
 
 export default function SearchInput() {
-  const dispatch       = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
   const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
 
-  const [claim, setClaim]               = React.useState("");
+  const [claim, setClaim] = React.useState("");
   const [preferSource, setPreferSource] = React.useState<PreferSource>("auto");
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
-  const [error, setError]               = React.useState("");
+  const [error, setError] = React.useState("");
 
   const submit = (event: React.SyntheticEvent): void => {
     event.preventDefault();
-    if (!claim.trim()) { 
-      setError("Please enter a claim"); 
+    if (!claim.trim()) {
+      setError("Please enter a claim");
       return;
     }
     setError("");
-    dispatch(checkFact({ 
-      claim: claim.trim(), 
-      prefer_source: preferSource 
-    }));
+    dispatch(
+      checkFact({
+        claim: claim.trim(),
+        prefer_source: preferSource,
+      }),
+    );
   };
 
   return (
@@ -80,12 +91,16 @@ export default function SearchInput() {
         </Grid>
 
         <ButtonRow item xs={12}>
-          <Button type="submit" variant="contained" color="primary" onClick={submit} disabled={fetchingAnswer}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            onClick={submit}
+            disabled={fetchingAnswer}
+          >
             {fetchingAnswer ? "Verifying..." : "Verify"}
           </Button>
-          <AdvancedToggle
-            onClick={() => setAdvancedOpen(!advancedOpen)}
-          >
+          <AdvancedToggle onClick={() => setAdvancedOpen(!advancedOpen)}>
             {advancedOpen ? "Hide options" : "Advanced"}
           </AdvancedToggle>
         </ButtonRow>
@@ -93,7 +108,11 @@ export default function SearchInput() {
         <Grid item xs={12}>
           <Collapse in={advancedOpen}>
             <Box sx={{ pt: 1.5, pb: 0.5 }}>
-              <FormControl variant="outlined" size="small" sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+              <FormControl
+                variant="outlined"
+                size="small"
+                sx={{ minWidth: { xs: "100%", sm: 220 } }}
+              >
                 <InputLabel id="prefer-source-label">Preferred source</InputLabel>
                 <Select
                   labelId="prefer-source-label"

@@ -13,7 +13,7 @@ interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
 
 export function renderWithProviders(
   ui: React.ReactElement,
-  { preloadedState = {}, route = "/", ...renderOptions }: RenderWithProvidersOptions = {}
+  { preloadedState = {}, route = "/", ...renderOptions }: RenderWithProvidersOptions = {},
 ) {
   const store = configureStore({ reducer: rootReducer, preloadedState });
   return render(
@@ -22,7 +22,7 @@ export function renderWithProviders(
         <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
       </ThemeProvider>
     </Provider>,
-    renderOptions
+    renderOptions,
   );
 }
 

@@ -1,9 +1,17 @@
 import type { Reducer } from "@reduxjs/toolkit";
 import type { FactcheckState, Progress } from "~/types/domain";
 import {
-  WILL_CHECK_FACT, SEARCH_STARTED, CANDIDATES_FOUND,
-  PASSAGE_FOUND, PASSAGE_VERDICT, FINAL_VERDICT, STREAM_DONE, STREAM_ERROR,
-  WILL_GET_HISTORY, GET_HISTORY_SUCCESS, GET_HISTORY_FAILURE,
+  WILL_CHECK_FACT,
+  SEARCH_STARTED,
+  CANDIDATES_FOUND,
+  PASSAGE_FOUND,
+  PASSAGE_VERDICT,
+  FINAL_VERDICT,
+  STREAM_DONE,
+  STREAM_ERROR,
+  WILL_GET_HISTORY,
+  GET_HISTORY_SUCCESS,
+  GET_HISTORY_FAILURE,
 } from "~/store/actions/factcheckActions";
 import type { FactcheckAction } from "~/store/actions/factcheckActions";
 
@@ -27,20 +35,37 @@ const initState: FactcheckState = {
 };
 
 const factcheckReducer = (
-  state: FactcheckState = initState, 
-  action: FactcheckAction
+  state: FactcheckState = initState,
+  action: FactcheckAction,
 ): FactcheckState => {
   switch (action.type) {
     case WILL_CHECK_FACT:
-      return { ...state, claim: action.claim, fetchingAnswer: true, progress: emptyProgress(), verdict: "", citations: [], error: null };
+      return {
+        ...state,
+        claim: action.claim,
+        fetchingAnswer: true,
+        progress: emptyProgress(),
+        verdict: "",
+        citations: [],
+        error: null,
+      };
     case SEARCH_STARTED:
       return { ...state, progress: { ...state.progress, queries: action.data.queries ?? [] } };
     case CANDIDATES_FOUND:
       return { ...state, progress: { ...state.progress, candidates: action.data.items ?? [] } };
     case PASSAGE_FOUND:
-      return { ...state, progress: { ...state.progress, passages: [...state.progress.passages, action.data] } };
+      return {
+        ...state,
+        progress: { ...state.progress, passages: [...state.progress.passages, action.data] },
+      };
     case PASSAGE_VERDICT:
-      return { ...state, progress: { ...state.progress, passageVerdicts: [...state.progress.passageVerdicts, action.data] } };
+      return {
+        ...state,
+        progress: {
+          ...state.progress,
+          passageVerdicts: [...state.progress.passageVerdicts, action.data],
+        },
+      };
     case FINAL_VERDICT:
       return { ...state, verdict: action.data.verdict, citations: action.data.citations ?? [] };
     case STREAM_DONE:
