@@ -14,12 +14,6 @@ import logging
 from datetime import UTC, datetime
 from typing import Annotated, NotRequired, TypedDict, cast
 
-
-class GoogleUserInfo(TypedDict):
-    email: str
-    name: NotRequired[str]
-    picture: NotRequired[str]
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlmodel import select
 from starlette.responses import RedirectResponse
@@ -47,9 +41,15 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"], prefix="/api/v1/auth")
 
 
+class GoogleUserInfo(TypedDict):
+    email: str
+    name: NotRequired[str]
+    picture: NotRequired[str]
+
+
 @router.get("/google/login")
 async def auth_google_login(request: Request) -> RedirectResponse:
-    oauth= get_oauth()
+    oauth = get_oauth()
     redirect_uri = get_settings().oauth_redirect_uri
     redirect = await oauth.google.authorize_redirect(request, redirect_uri)
     return cast(RedirectResponse, redirect)
@@ -86,9 +86,7 @@ async def auth_google_callback(request: Request) -> RedirectResponse:
         access = mint_access_token(user.id, user.email)
         raw_refresh, refresh_hash = new_refresh_token()
         session.add(
-            RefreshToken(
-                user_id=user.id, token_hash=refresh_hash, expires_at=refresh_expiry()
-            )
+            RefreshToken(user_id=user.id, token_hash=refresh_hash, expires_at=refresh_expiry())
         )
         await session.commit()
 
@@ -107,13 +105,15 @@ async def auth_refresh(request: Request) -> Response:
     token_hash = hash_token(raw)
     async with session_scope() as session:
         refresh_token = (
-            await session.execute(
-                select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-            )
+            await session.execute(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
         ).scalar_one_or_none()
 
         now = datetime.now(UTC)
-        if refresh_token is None or refresh_token.revoked or _expired(refresh_token.expires_at, now):
+        if (
+            refresh_token is None
+            or refresh_token.revoked
+            or _expired(refresh_token.expires_at, now)
+        ):
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
 
         user = await session.get(User, refresh_token.user_id)
@@ -126,9 +126,7 @@ async def auth_refresh(request: Request) -> Response:
         access = mint_access_token(user.id, user.email)
         raw_refresh, refresh_hash = new_refresh_token()
         session.add(
-            RefreshToken(
-                user_id=user.id, token_hash=refresh_hash, expires_at=refresh_expiry()
-            )
+            RefreshToken(user_id=user.id, token_hash=refresh_hash, expires_at=refresh_expiry())
         )
         await session.commit()
 
