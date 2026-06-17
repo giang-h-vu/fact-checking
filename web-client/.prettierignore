@@ -1,0 +1,6 @@
+# Generated from api/openapi.yaml — formatting it trips the codegen-drift gate.
+src/api.ts
+
+# Build output / deps
+dist
+node_modules

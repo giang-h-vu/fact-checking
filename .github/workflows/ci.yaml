@@ -104,6 +104,10 @@ jobs:
         working-directory: web-client
         run: npm run build
 
+      - name: Format check (prettier)
+        working-directory: web-client
+        run: npm run format:check
+
       - name: Test
         working-directory: web-client
         run: npm test -- --run
