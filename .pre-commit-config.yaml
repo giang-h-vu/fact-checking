@@ -21,25 +21,40 @@ repos:
     hooks:
       - id: actionlint
 
-  # Backend auto-fix: ruff lint --fix + ruff format
-  # Version tracks the `ruff>=0.6,<0.7` pin in server/pyproject.toml.
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+  #   - ruff       <- server/uv.lock
+  #   - prettier   <- web-client/package-lock.json
+  - repo: local
     hooks:
       # Exclude generated models
-      - id: ruff # lint with autofix
-        args: [--fix]
+      # lint with autofix
+      - id: ruff-check
+        name: ruff (lint --fix)
+        entry: uv run --project server ruff check --fix
+        language: system
         files: ^server/
         exclude: ^server/app/api/generated/
-      - id: ruff-format # formatter
+        types: [python]
+        # server formatter
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run --project server ruff format
+        language: system
         files: ^server/
         exclude: ^server/app/api/generated/
+        types: [python]
+        # typecheck the whole app package
+      - id: mypy
+        name: mypy
+        entry: bash -c 'cd server && uv run mypy app'
+        language: system
+        files: ^server/
+        # mypy needs whole-package analysis
+        pass_filenames: false
 
-  # YAML + frontend auto-format: prettier
-  - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.3.3
-    hooks:
-      - id: prettier
-        # YAML + TS/TSX/CSS/JSON
-        files: '\.(ya?ml)$|^web-client/.*\.(ts|tsx|css|json)$'
+        # Fix formatting with prettier for web-client
+      - id: prettier # YAML + TS/TSX/CSS/JSON
+        name: prettier
+        entry: web-client/node_modules/.bin/prettier --write
+        language: system
+        files: '\.(ya?ml)$|^web-client/.*\.(ts|tsx|css|json|js|jsx)$'
         exclude: ^web-client/src/api\.ts$
