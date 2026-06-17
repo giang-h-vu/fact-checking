@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-tools:
-    name: Backend tool tests (real APIs)
+    name: Agent tool tests (real APIs)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
