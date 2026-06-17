@@ -58,3 +58,12 @@ repos:
         language: system
         files: '\.(ya?ml)$|^web-client/.*\.(ts|tsx|css|json|js|jsx)$'
         exclude: ^web-client/src/api\.ts$
+
+        # ESLint run inside web-client;
+      - id: eslint
+        name: eslint
+        entry: bash -c 'cd web-client && npm run lint:fix'
+        language: system
+        files: ^web-client/.*\.(ts|tsx)$
+        exclude: ^web-client/src/api\.ts$
+        pass_filenames: false

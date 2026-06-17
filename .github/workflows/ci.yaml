@@ -71,6 +71,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Typecheck (mypy)
+        if: ${{ !cancelled() }}
         working-directory: server
         run: uv run mypy app
 
@@ -105,8 +106,14 @@ jobs:
         run: npm run build
 
       - name: Format check (prettier)
+        if: ${{ !cancelled() }}
         working-directory: web-client
         run: npm run format:check
+
+      - name: Lint (eslint)
+        if: ${{ !cancelled() }}
+        working-directory: web-client
+        run: npm run lint
 
       - name: Test
         working-directory: web-client
