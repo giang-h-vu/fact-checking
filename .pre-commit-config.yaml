@@ -1,17 +1,18 @@
-# Run `uv tool install pre-commit` once to wire these into your local git hooks.
+# Run `uv tool install pre-commit`  to install
+# Run `pre-commit install`once to wire these into your local git hooks.
 # Run on demand with `pre-commit run --all-files`.
 #
 # Two kinds of hook below:
 #   - CHECKERS report problems and leave files untouched (check-yaml, actionlint).
 #   - FIXERS rewrite files in place, then fail the commit so you re-stage them
 repos:
-  # Generic checks + small fixers (all files) 
+  # Generic checks + small fixers (all files)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: check-yaml          # syntax-validate every YAML file (checker)
+      - id: check-yaml # syntax-validate every YAML file (checker)
         args: [--allow-multiple-documents]
-      - id: end-of-file-fixer   # fixer: ensure trailing newline
+      - id: end-of-file-fixer # fixer: ensure trailing newline
       - id: trailing-whitespace # fixer: strip trailing whitespace
 
   # GitHub Actions semantic lint
@@ -20,17 +21,17 @@ repos:
     hooks:
       - id: actionlint
 
-  # Backend auto-fix: ruff lint --fix + ruff format 
+  # Backend auto-fix: ruff lint --fix + ruff format
   # Version tracks the `ruff>=0.6,<0.7` pin in server/pyproject.toml.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
       # Exclude generated models
-      - id: ruff              # lint with autofix
+      - id: ruff # lint with autofix
         args: [--fix]
         files: ^server/
         exclude: ^server/app/api/generated/
-      - id: ruff-format       # formatter
+      - id: ruff-format # formatter
         files: ^server/
         exclude: ^server/app/api/generated/
 
