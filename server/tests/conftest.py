@@ -11,7 +11,11 @@ from app.platform.db.session import _engine, _sessionmaker
 
 
 @pytest.fixture(autouse=True)
-def reset_caches():
+def reset_caches(monkeypatch):
+    # Inject a fixed JWT secret so token signing works everywhere.
+    # env vars override .env and the cache_clear below forces get_settings()
+    # to re-read it.
+    monkeypatch.setenv("JWT_SECRET", "test-secret-not-for-production")
     get_settings.cache_clear()
     _engine.cache_clear()
     _sessionmaker.cache_clear()
@@ -53,8 +57,9 @@ def seed_user(db_url: str, email: str = "test@example.com", name: str = "Test Us
     return _run_db(db_url, op)
 
 
-def seed_refresh_token(db_url: str, user_id: int, token_hash: str, *, ttl_seconds: int = 3600,
-                       revoked: bool = False) -> None:
+def seed_refresh_token(
+    db_url: str, user_id: int, token_hash: str, *, ttl_seconds: int = 3600, revoked: bool = False
+) -> None:
     async def op(session: AsyncSession) -> None:
         session.add(
             RefreshToken(
