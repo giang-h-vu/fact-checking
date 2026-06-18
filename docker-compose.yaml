@@ -2,7 +2,6 @@
 x-ollama-model: &ollama-model "qwen2.5:7b-instruct"
 
 services:
-
   # ── LLM runtime ─────────────────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -67,7 +66,13 @@ services:
       ollama-pull:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -86,5 +91,5 @@ services:
         condition: service_healthy
 
 volumes:
-  ollama_data:   # persists downloaded models
-  server_data:   # persists the SQLite history database
+  ollama_data: # persists downloaded models
+  server_data: # persists the SQLite history database
