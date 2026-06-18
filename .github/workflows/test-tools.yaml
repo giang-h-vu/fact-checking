@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+  # Lets the deploy pipeline run these real-API tests as a gating job.
+  workflow_call:
 
 jobs:
   test-tools:

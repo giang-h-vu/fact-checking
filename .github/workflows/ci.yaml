@@ -1,4 +1,4 @@
-name: CI
+name: Continuous Integration
 
 # OpenAPI lint -> codegen drift check -> build -> tests, for every PR and push to main.
 on:
@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Lets the deploy pipeline invoke this whole workflow as a gating job
+  # Runs against the caller's commit, so a tag/release deploy is gated on CI
+  # of that exact commit.
+  workflow_call:
 
 # Cancel previous runs on the same ref.
 concurrency:

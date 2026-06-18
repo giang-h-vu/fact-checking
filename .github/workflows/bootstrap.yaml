@@ -1,0 +1,100 @@
+name: Setup cluster (manual)
+
+# Setup from scratch of the STATEFUL + cluster-scoped infra,
+# run by hand creating the AKS cluster.
+# Manual-only: re-running creates/updates PVCs (Ollama model + SQLite), the Gateway's
+# public IP, and the TLS cert.
+#
+# Layering:  terraform (cluster)  ->  bootstrap.yaml (add-ons + stateful infra)  ->  deploy.yaml (app)
+#
+# Order matters: CRDs/controllers must exist before the resources that use them
+#   Gateway API CRDs + NGF  ->  GatewayClass/Gateway/HTTPRoute
+#   cert-manager            ->  ClusterIssuer/Certificate
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: bootstrap-${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  AKS_CLUSTER: fact-checking
+  AKS_RESOURCE_GROUP: fact-checking
+  K8S_NAMESPACE: fact-checking
+  GATEWAY_API_VERSION: v1.2.0
+
+jobs:
+  bootstrap:
+    name: Bootstrap AKS infra
+    runs-on: ubuntu-latest
+    timeout-minutes: 24 # cluster start + helm installs + cert issuance
+    environment: production # gated approval + scoped secrets
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure cluster is running
+        run: ./infra/scripts/ensure-cluster-running.sh
+
+      - name: Get kubeconfig
+        run: az aks get-credentials -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP" --overwrite-existing
+
+      - name: Wait for nodes
+        run: kubectl wait --for=condition=Ready nodes --all --timeout=300s
+
+      # Cluster add-ons (all idempotent)
+      - name: Install Gateway API CRDs
+        run: |
+          kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+
+      - name: Install NGINX Gateway Fabric
+        run: |
+          helm upgrade --install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+            --namespace nginx-gateway --create-namespace --wait
+
+      - name: Install cert-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm upgrade --install cert-manager jetstack/cert-manager \
+            --namespace cert-manager --create-namespace \
+            --set crds.enabled=true --wait
+
+      # App namespace + secret (secret values come from CI secrets, never git) ---
+
+      - name: Create namespace
+        run: kubectl apply -f infra/k8s/bootstrap/namespace.yaml
+
+      - name: Create app-secrets
+        run: |
+          kubectl create secret generic app-secrets -n "$K8S_NAMESPACE" \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
+            --from-literal=GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --from-literal=GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+            --from-literal=BRAVE_API_KEY="${{ secrets.BRAVE_API_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # --- Stateful + cluster-scoped infra (PVCs, Gateway, Ollama, ClusterIssuer) ---
+      - name: Apply bootstrap infra
+        run: kubectl apply -k infra/k8s/bootstrap
+
+      - name: Wait for Ollama
+        run: kubectl rollout status deployment/ollama -n "$K8S_NAMESPACE" --timeout=600s
+
+      - name: Show Gateway address (point your DNS A record here)
+        run: |
+          echo "Gateway address (set the factchecking.dpdns.org A record to this IP):"
+          kubectl get gateway fact-checking-gateway -n "$K8S_NAMESPACE" \
+            -o jsonpath='{.status.addresses[0].value}' || true
+          echo
+          kubectl get certificate -n "$K8S_NAMESPACE" || true
