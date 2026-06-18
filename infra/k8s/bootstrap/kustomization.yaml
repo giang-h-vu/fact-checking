@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Bootstrap tier — stateful, cluster-scoped, set-once infra. Applied MANUALLY
+# (bootstrap.yaml workflow) after a cluster is (re)created. NOT on every release:
+# re-applying these risks the Ollama model PVC, the SQLite PVC, and the Gateway's
+# public IP + TLS cert.
+#
+# Prerequisites applied by the bootstrap workflow BEFORE this kustomization:
+#   - Gateway API CRDs        (GatewayClass/Gateway/HTTPRoute types)
+#   - NGINX Gateway Fabric    (helm)  -> provides the `nginx` controller
+#   - cert-manager            (helm)  -> provides ClusterIssuer/Certificate types
+#   - app-secrets             (kubectl create secret, from CI secrets)
+#
+# No `namespace:` here on purpose: this set includes the Namespace itself plus
+# cluster-scoped resources (ClusterIssuer, GatewayClass).
+resources:
+  - namespace.yaml
+  - cluster-issuer.yaml
+  - gatewayclass.yaml
+  - gateway.yaml
+  - server-pvc.yaml
+  - ollama-pvc.yaml
+  - ollama-deployment.yaml
+  - ollama-service.yaml

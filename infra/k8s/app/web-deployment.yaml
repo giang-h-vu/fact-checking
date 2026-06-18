@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web
-  namespace: fact-checking
 spec:
   replicas: 1
   selector:
@@ -15,7 +14,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/giang-h-vu/fact-checking-web:latest
+          image: fact-checking-web # kustomize sets newName + newTag
           ports:
             - containerPort: 80
           resources:

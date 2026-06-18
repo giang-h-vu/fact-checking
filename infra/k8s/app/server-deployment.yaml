@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: server
-  namespace: fact-checking
 spec:
   replicas: 1
   selector:
@@ -15,14 +14,14 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/giang-h-vu/fact-checking-server:latest
+          image: fact-checking-server # kustomize sets newName + newTag
           ports:
             - containerPort: 8000
           envFrom:
             - configMapRef:
                 name: server-config # non-sensitive config
             - secretRef:
-                name: app-secrets # sensitive values
+                name: app-secrets # sensitive values (created by bootstrap)
           resources:
             requests:
               memory: "256Mi"
@@ -39,4 +38,4 @@ spec:
       volumes:
         - name: server-data
           persistentVolumeClaim:
-            claimName: server-data
+            claimName: server-data # PVC created by bootstrap tier

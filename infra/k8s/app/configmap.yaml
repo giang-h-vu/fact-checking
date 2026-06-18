@@ -2,7 +2,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: server-config
-  namespace: fact-checking
 data:
   OLLAMA_HOST: "http://ollama:11434" # DNS name of the ollama Service
   OLLAMA_MODEL: "qwen2.5:7b-instruct"

@@ -6,7 +6,7 @@ spec:
   acme:
     # Let's Encrypt production endpoint
     server: https://acme-v02.api.letsencrypt.org/directory
-    # Replace with your email — Let's Encrypt sends expiry warnings here
+    # Let's Encrypt sends expiry warnings here
     email: vhgiang98@gmail.com
     privateKeySecretRef:
       name: letsencrypt-prod-key

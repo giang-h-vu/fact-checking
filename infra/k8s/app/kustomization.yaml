@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# App tier — deployed on EVERY release by deploy.yaml.
+# `kubectl apply -k` is idempotent: creates resources if missing, updates if
+# present, so the app can rebuild itself from scratch (as long as the bootstrap
+# tier — namespace, secrets, PVCs, Gateway, Ollama — already exists).
+namespace: fact-checking
+
+resources:
+  - configmap.yaml
+  - server-deployment.yaml
+  - server-service.yaml
+  - server-httproute.yaml
+  - web-deployment.yaml
+  - web-service.yaml
+  - web-httproute.yaml
+
+# CI overrides newName + newTag before apply, via:
+#   kustomize edit set image fact-checking-server=<reg>/<owner>/fact-checking-server:<tag>
+#                            fact-checking-web=<reg>/<owner>/fact-checking-web-client:<tag>
+# The committed values below are placeholders so `kubectl apply -k` also works by hand.
+images:
+  - name: fact-checking-server
+    newName: ghcr.io/giang-h-vu/fact-checking-server
+    newTag: latest
+  - name: fact-checking-web
+    newName: ghcr.io/giang-h-vu/fact-checking-web-client
+    newTag: latest
