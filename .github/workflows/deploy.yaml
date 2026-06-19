@@ -19,9 +19,9 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  AKS_CLUSTER: fact-checking
-  AKS_RESOURCE_GROUP: fact-checking
-  K8S_NAMESPACE: fact-checking
+  AKS_CLUSTER: ${{ vars.AKS_CLUSTER }}
+  AKS_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP }}
+  K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
 
 jobs:
   # Re-run the full CI workflow against THIS commit.
