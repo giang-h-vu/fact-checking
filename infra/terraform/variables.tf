@@ -21,3 +21,15 @@ variable "node_size" {
   type        = string
   default     = "Standard_B4s_v2"
 }
+
+variable "github_repository" {
+  description = "GitHub repo (owner/name) trusted for OIDC deploys. Used to build the federated credential subject."
+  type        = string
+  default     = "giang-h-vu/fact-checking"
+}
+
+variable "github_environment" {
+  description = "GitHub Actions environment that the OIDC subject is scoped to (must match `environment:` in the deploy job)."
+  type        = string
+  default     = "production"
+}

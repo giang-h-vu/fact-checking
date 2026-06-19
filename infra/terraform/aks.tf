@@ -15,6 +15,11 @@ resource "azurerm_kubernetes_cluster" "main" {
     name       = "default"
     node_count = 1
     vm_size    = var.node_size
+
+    # Required to change vm_size in place: the provider spins up a temp pool,
+    # drains onto it, then recreates "default" at the new size. Avoids a full
+    # cluster recreate, so in-cluster state survives.
+    temporary_name_for_rotation = "defaulttmp"
   }
 
 	# Enable system-assigned managed identity for the AKS cluster
