@@ -18,26 +18,9 @@ set -euo pipefail
 state=$(az aks show -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP" \
           --query "powerState.code" -o tsv)
 echo "Cluster power state: $state"
-
-case "$state" in
-  (Running)
-    echo "Already running -- skipping start."
-    ;;
-  (Stopped)
-    echo "Starting cluster (blocks until ready, ~3-5 min)..."
-    az aks start -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP"
-    ;;
-  (*)
-
-    echo "Cluster in '$state' state; reconciling with 'az aks update'..."
-    az aks update -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP" --yes
-
-    state=$(az aks show -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP" \
-              --query "powerState.code" -o tsv)
-    echo "Cluster power state after reconcile: $state"
-    if [ "$state" != "Running" ]; then
-      echo "Starting cluster (blocks until ready, ~3-5 min)..."
-      az aks start -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP"
-    fi
-    ;;
-esac
+if [ "$state" != "Running" ]; then
+  echo "Starting cluster (blocks until ready, ~3-5 min)..."
+  az aks start -n "$AKS_CLUSTER" -g "$AKS_RESOURCE_GROUP"
+else
+  echo "Already running -- skipping start."
+fi

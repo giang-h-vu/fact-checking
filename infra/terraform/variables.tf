@@ -17,9 +17,14 @@ variable "cluster_name" {
 }
 
 variable "node_size" {
-  description = "VM size for the AKS node. GPU (demo): Standard_NC4as_T4_v3 (~$0.50/hr, T4 16GB). CPU (learning): Standard_B4s_v2 (~$0.13/hr, slow inference)."
+  # NOTE: the Azure for Students subscription has 0 quota for the Bsv2 family in
+  # EVERY region (total regional cap is 10 vCPUs, spread across families). The
+  # D/E/F families do get 10 vCPUs. Keep to 4 vCPUs so a surge/rotation node (node + temp pool = 8)
+  # stays under the 10-core cap.
+  # GPU (demo): Standard_NC4as_T4_v3 (~$0.50/hr, T4 16GB) — needs standardNCFamily quota (12).
+  # CPU (learning): Standard_D4s_v6 (4 vCPU / 16GB). More RAM for Ollama: Standard_E4s_v6 (4 vCPU / 32GB).
   type        = string
-  default     = "Standard_B4s_v2"
+  default     = "Standard_D4s_v6"
 }
 
 variable "github_repository" {
