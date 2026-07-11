@@ -20,6 +20,11 @@ resource "azurerm_kubernetes_cluster" "main" {
     # drains onto it, then recreates "default" at the new size. Avoids a full
     # cluster recreate, so in-cluster state survives.
     temporary_name_for_rotation = "defaulttmp"
+    upgrade_settings {
+      drain_timeout_in_minutes      = 0
+      max_surge                     = "10%"
+      node_soak_duration_in_minutes = 0
+    }
   }
 
 	# Enable system-assigned managed identity for the AKS cluster
