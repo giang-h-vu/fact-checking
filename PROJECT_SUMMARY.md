@@ -88,7 +88,8 @@ fact-checking/
 ├── .github/workflows/                # ci · test-tools · deploy · bootstrap
 └── infra/
     ├── terraform/                    # AKS cluster, subscription budget, GitHub OIDC identity
-    ├── k8s/bootstrap/                # set-once: namespace, Gateway, ClusterIssuer, PVCs, Ollama
+    ├── k8s/bootstrap/                # set-once: namespace, Gateway, ClusterIssuer, SQLite PVC
+    ├── k8s/optional/ollama/          # in-cluster Ollama (only for LLM_PROVIDER=ollama)
     ├── k8s/app/                      # per-release (kustomize): server + web + ConfigMap
     └── scripts/                      # start.sh · stop.sh · ensure-cluster-running.sh
 ```
@@ -126,7 +127,7 @@ All LLM calls use `with_structured_output(Model, method="json_schema")`, not the
 | Provider | Client | Notes |
 |---|---|---|
 | `openrouter` | `langchain_openai.ChatOpenAI` → `https://openrouter.ai/api/v1` | Hosted. Sends `provider.require_parameters: true` so requests only route to providers that honour `json_schema` (otherwise OpenRouter may silently drop it). Optional `OPENROUTER_FALLBACK_MODELS` becomes the `models` array, tried in order if the primary errors. |
-| `ollama` | `langchain_ollama.ChatOllama` | Local/in-cluster. Needs the `ollama` compose profile or the bootstrap Ollama Deployment. |
+| `ollama` | `langchain_ollama.ChatOllama` | Local/in-cluster. Needs the `ollama` compose profile, or `infra/k8s/optional/ollama/` applied in the cluster. |
 
 `get_llm()` is `lru_cache`d, so changing LLM settings needs a server restart.
 

@@ -2,7 +2,7 @@ name: Setup cluster (manual)
 
 # Setup from scratch of the STATEFUL + cluster-scoped infra,
 # run by hand creating the AKS cluster.
-# Manual-only: re-running creates/updates PVCs (Ollama model + SQLite), the Gateway's
+# Manual-only: re-running creates/updates the SQLite PVC, the Gateway's
 # public IP, and the TLS cert.
 #
 # Layering:  terraform (cluster)  ->  bootstrap.yaml (add-ons + stateful infra)  ->  deploy.yaml (app)
@@ -86,14 +86,12 @@ jobs:
             --from-literal=GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
             --from-literal=GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
             --from-literal=BRAVE_API_KEY="${{ secrets.BRAVE_API_KEY }}" \
+            --from-literal=OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # --- Stateful + cluster-scoped infra (PVCs, Gateway, Ollama, ClusterIssuer) ---
+      # --- Stateful + cluster-scoped infra (PVC, Gateway, ClusterIssuer) ---
       - name: Apply bootstrap infra
         run: kubectl apply -k infra/k8s/bootstrap
-
-      - name: Wait for Ollama
-        run: kubectl rollout status deployment/ollama -n "$K8S_NAMESPACE" --timeout=600s
 
       - name: Show Gateway address
         run: |

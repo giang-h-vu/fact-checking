@@ -336,10 +336,11 @@ The manifests are committed in `infra/k8s/` and are **not copied into this guide
 
 | Tier | Path | Applied | Contains |
 |---|---|---|---|
-| **bootstrap** | `infra/k8s/bootstrap/` | Once per new cluster (bootstrap workflow, or by hand) | `namespace`, `cluster-issuer`, `gatewayclass`, `gateway`, `server-pvc` (5Gi SQLite), `ollama-{pvc,deployment,service}` |
+| **bootstrap** | `infra/k8s/bootstrap/` | Once per new cluster (bootstrap workflow, or by hand) | `namespace`, `cluster-issuer`, `gatewayclass`, `gateway`, `server-pvc` (5Gi SQLite) |
+| **optional** | `infra/k8s/optional/ollama/` | Only if you set `LLM_PROVIDER=ollama` | `ollama-{pvc,deployment,service}` (6Gi memory request, 10Gi PVC) |
 | **app** | `infra/k8s/app/` | Every release (deploy workflow) | `configmap`, `server-{deployment,service,httproute}`, `web-{deployment,service,httproute}`, image tags in `kustomization.yaml` |
 
-Bootstrap is kept separate because re-applying it risks the PVCs, the Gateway's public IP and the TLS cert.
+Bootstrap is kept separate because re-applying it risks the SQLite PVC, the Gateway's public IP and the TLS cert.
 
 ### Step 3.1 — Namespace and secrets
 
@@ -428,10 +429,19 @@ LLM-related keys in the ConfigMap:
 
 `OPENROUTER_API_KEY` comes from the `app-secrets` Secret, not the ConfigMap.
 
-**Why a PVC for Ollama?** (Ollama mode only.) The `qwen2.5:7b-instruct` model is ~4.7 GB; without a PersistentVolumeClaim it would be re-downloaded on every pod restart. The PVC is an Azure Managed Disk that persists independently of the pod, including across `az aks stop/start`. The model is pulled in a `postStart` hook because the Ollama HTTP API must be up before `ollama pull` works. In OpenRouter mode this Deployment still runs but is idle — scale it to 0 to free its 6Gi memory request:
+**Using Ollama instead of OpenRouter.** The Ollama manifests are not part of bootstrap. Apply them and flip the provider:
 
 ```bash
-kubectl scale deployment/ollama -n fact-checking --replicas=0
+kubectl apply -f infra/k8s/optional/ollama/       # PVC + Deployment + ClusterIP Service
+# then set LLM_PROVIDER: "ollama" in infra/k8s/app/configmap.yaml and re-apply the app tier
+```
+
+**Why a PVC for Ollama?** The `qwen2.5:7b-instruct` model is ~4.7 GB; without a PersistentVolumeClaim it would be re-downloaded on every pod restart. The PVC is an Azure Managed Disk that persists independently of the pod, including across `az aks stop/start`. The model is pulled in a `postStart` hook because the Ollama HTTP API must be up before `ollama pull` works. It requests 6Gi of memory, which is why OpenRouter mode (no in-cluster model) is the default.
+
+**Cleaning up an older cluster.** Removing Ollama from the bootstrap kustomization does not delete what a previous bootstrap created (`kubectl apply -k` does not prune). To free the memory and disk:
+
+```bash
+kubectl delete deployment/ollama service/ollama pvc/ollama-data -n fact-checking
 ```
 
 ## Phase 4: Stop/start the cluster to save credit
@@ -511,7 +521,7 @@ kubectl get pods -n fact-checking
 # NAME                      READY   STATUS    RESTARTS   AGE
 # server-xxxxx              1/1     Running   0          3m
 # web-xxxxx                 1/1     Running   0          2m
-# ollama-xxxxx              1/1     Running   0          5m   <- applied by bootstrap even in OpenRouter mode (idle)
+# ollama-xxxxx              1/1     Running   0          5m   <- only if you applied infra/k8s/optional/ollama
 ```
 ### 5.5 — End-to-end test
 Open `https://factchecking.dpdns.org` in your browser. Submit a claim and watch the live SSE progress stream. Confirm a verdict and citations appear.
@@ -522,7 +532,7 @@ Open `https://factchecking.dpdns.org` in your browser. Submit a claim and watch 
 
 Phases 1–5 are the **manual** path. The same steps are codified in two GitHub Actions workflows so you don't have to run them by hand:
 
-- `.github/workflows/bootstrap.yaml` — one-time / rare, **manual trigger only** (`workflow_dispatch`). Mirrors Phase 2 + the stateful parts of Phase 3 (namespace, secret, ClusterIssuer, GatewayClass, Gateway, PVCs, Ollama). Run it once after `terraform apply` (re)creates the cluster.
+- `.github/workflows/bootstrap.yaml` — one-time / rare, **manual trigger only** (`workflow_dispatch`). Mirrors Phase 2 + the stateful parts of Phase 3 (namespace, secret, ClusterIssuer, GatewayClass, Gateway, SQLite PVC). Run it once after `terraform apply` (re)creates the cluster.
 - `.github/workflows/deploy.yaml` — the app promotion pipeline (`ci → test-tools → build-images → deploy`). Triggers on a `v*.*.*` tag, a published release, or a manual run. Builds immutable `sha-<full-sha>` images and rolls them out.
 
 Both authenticate to Azure with **OIDC** (federated credentials) — there is no stored Azure password. Terraform (Phase 1) creates the identity and stays manual; this phase explains it and lists the GitHub secrets to set. `deploy.yaml` also gates on `ci.yaml` (spec lint, codegen drift, build, tests) and `test-tools.yaml` (real-API tool tests).
@@ -558,6 +568,7 @@ terraform output -raw azure_subscription_id
 ```
 
 If you fork the repo, set `github_repository` in `terraform.tfvars` before applying.
+
 ### 6.3 — Configure GitHub secrets and variables
 
 Create a **`production` environment** under Settings → Environments (this is what enables the approval gate and scopes the secrets below). Then add:
@@ -589,7 +600,7 @@ Create a **`production` environment** under Settings → Environments (this is w
 |---|---|
 | `BRAVE_API_KEY` | Used by the `test-tools` job, which has **no** `environment:` (it also runs standalone and as a reusable call via `secrets: inherit`). An environment secret would be invisible to it. A gated job can still read repository secrets, so this one definition serves both `test-tools` and `bootstrap`. |
 
-> **Known gap — `OPENROUTER_API_KEY`:** `bootstrap.yaml`'s *Create app-secrets* step currently passes only `JWT_SECRET`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `BRAVE_API_KEY` into the `app-secrets` Secret. For OpenRouter mode add `--from-literal=OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"` to that step (and re-run bootstrap), or patch the Secret by hand — otherwise the server starts but every LLM call fails.
+> `OPENROUTER_API_KEY` is passed into `app-secrets` by the *Create app-secrets* step of `bootstrap.yaml`; if you change it later, re-run bootstrap or patch the Secret and restart the server (`kubectl rollout restart deployment/server -n fact-checking`).
 
 > `GITHUB_TOKEN` (used to push images to GHCR) is **auto-provided** per run — you never create or store it. Its scope is governed by the `permissions:` block in `deploy.yaml` (`packages: write`).
 

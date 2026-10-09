@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Bootstrap tier — stateful, cluster-scoped, set-once infra. Applied MANUALLY
 # (bootstrap.yaml workflow) after a cluster is (re)created. NOT on every release:
-# re-applying these risks the Ollama model PVC, the SQLite PVC, and the Gateway's
+# re-applying these risks the SQLite PVC and the Gateway's
 # public IP + TLS cert.
 #
 # Prerequisites applied by the bootstrap workflow BEFORE this kustomization:
@@ -20,6 +20,3 @@ resources:
   - gatewayclass.yaml
   - gateway.yaml
   - server-pvc.yaml
-  - ollama-pvc.yaml
-  - ollama-deployment.yaml
-  - ollama-service.yaml

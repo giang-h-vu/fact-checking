@@ -17,7 +17,7 @@ kubectl/manifests ──► inside the cluster:
 ```
 
 - **Traffic**: one public LoadBalancer IP (provisioned by NGF when the `Gateway` is applied) routes `/api/*` to the backend and everything else to the SPA.
-- **LLM**: `LLM_PROVIDER` in the `server-config` ConfigMap picks the backend. `openrouter` (current default) needs `OPENROUTER_API_KEY` in the `app-secrets` Secret; `ollama` uses the in-cluster Service. The bootstrap tier still applies the Ollama Deployment and PVC in OpenRouter mode, so they sit idle (6Gi memory request, 10Gi disk).
+- **LLM**: `LLM_PROVIDER` in the `server-config` ConfigMap picks the backend. `openrouter` (current default) needs `OPENROUTER_API_KEY` in the `app-secrets` Secret; `ollama` uses the in-cluster Service, whose manifests live in `k8s/optional/ollama/` and are **not** part of the bootstrap tier.
 - **State**: the SQLite database (and the Ollama model, if used) live on PersistentVolumeClaims backed by Azure Managed Disks — they survive pod restarts *and* cluster stop/start.
 - **Cost control**: `az aks stop` deallocates the worker node (billing stops, ~$0.75/mo for disks only); a subscription-scoped Terraform budget emails alerts at 50% actual / 70% forecast / 90% actual (subscription scope, because AKS bills compute into the `MC_*` node resource group, which a resource-group budget never sees).
 
@@ -36,8 +36,9 @@ infra/
 ├── k8s/
 │   ├── bootstrap/         # set-once, applied by the bootstrap workflow (`kubectl apply -k`)
 │   │   ├── namespace.yaml, cluster-issuer.yaml, gatewayclass.yaml, gateway.yaml
-│   │   ├── server-pvc.yaml            # 5Gi SQLite volume
-│   │   └── ollama-{deployment,service,pvc}.yaml   # optional LLM runtime, 10Gi PVC
+│   │   └── server-pvc.yaml            # 5Gi SQLite volume
+│   ├── optional/ollama/   # in-cluster LLM runtime — only for LLM_PROVIDER=ollama (`kubectl apply -f`)
+│   │   └── ollama-{deployment,service,pvc}.yaml   # 6Gi memory request, 10Gi PVC
 │   └── app/               # per-release, applied by the deploy workflow (`kubectl apply -k`)
 │       ├── configmap.yaml             # non-sensitive server config (LLM_PROVIDER, models, URLs…)
 │       ├── server-{deployment,service,httproute}.yaml
@@ -70,7 +71,7 @@ Normally via GitHub Actions: run **bootstrap** once after the cluster is (re)cre
 By hand, after the cluster add-ons and `app-secrets` exist:
 
 ```bash
-kubectl apply -k infra/k8s/bootstrap   # namespace, issuer, gateway, PVCs, Ollama
+kubectl apply -k infra/k8s/bootstrap   # namespace, issuer, gateway, SQLite PVC
 kubectl apply -k infra/k8s/app         # server + web + ConfigMap
 ```
 
@@ -80,7 +81,9 @@ Sensitive config — `JWT_SECRET`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE
 kubectl create secret generic app-secrets --from-env-file=.env.prod -n fact-checking
 ```
 
-> **Gap:** `.github/workflows/bootstrap.yaml` currently creates `app-secrets` from `JWT_SECRET`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `BRAVE_API_KEY` only. With `LLM_PROVIDER=openrouter` you must also add `OPENROUTER_API_KEY` there (or patch the Secret by hand), otherwise the server cannot reach the LLM.
+The bootstrap workflow builds `app-secrets` from the GitHub environment secrets of the same names, including `OPENROUTER_API_KEY` — add it under Settings → Environments → production before running bootstrap.
+
+To use Ollama instead of OpenRouter, apply `kubectl apply -f infra/k8s/optional/ollama/` and set `LLM_PROVIDER=ollama` in the ConfigMap.
 
 Non-sensitive config lives in the ConfigMap (`k8s/app/configmap.yaml`): `LLM_PROVIDER`, `OPENROUTER_MODEL`, `OPENROUTER_FALLBACK_MODELS`, `OLLAMA_*`, URLs, cookie flags.
 

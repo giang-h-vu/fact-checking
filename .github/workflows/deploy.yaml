@@ -120,7 +120,7 @@ jobs:
       # Pin the app overlay to the built images, then apply.
       # `kustomize edit set image` rewrites the local kustomization
       # creates app resources if missing, updates them otherwise.
-      # Stateful infra (PVCs, Gateway, Ollama, secrets, namespace) is NOT touched here
+      # Stateful infra (PVC, Gateway, secrets, namespace) is NOT touched here
       # First deploy requires bootstrap to have run
       - name: Roll out images
         run: |
