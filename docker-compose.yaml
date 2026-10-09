@@ -1,4 +1,7 @@
-# Change the model here — it propagates to both the pull step and the server.
+# LLM backend: set LLM_PROVIDER in server/.env.
+#   openrouter -> `docker compose up` (needs OPENROUTER_API_KEY / OPENROUTER_MODEL in server/.env)
+#   ollama     -> `docker compose --profile ollama up` (starts the local model runtime)
+# Change the Ollama model here — it propagates to both the pull step and the server.
 x-ollama-model: &ollama-model "qwen2.5:7b-instruct"
 
 services:
@@ -6,6 +9,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    profiles: [ollama]
     volumes:
       - ollama_data:/root/.ollama
     ports:
@@ -29,6 +33,7 @@ services:
   # ── One-shot: pulls the model into the volume if not already present ─────────
   ollama-pull:
     image: ollama/ollama:latest
+    profiles: [ollama]
     volumes:
       - ollama_data:/root/.ollama
     entrypoint:
@@ -65,6 +70,7 @@ services:
     depends_on:
       ollama-pull:
         condition: service_completed_successfully
+        required: false # skipped when the ollama profile is off (OpenRouter mode)
     healthcheck:
       test:
         [
