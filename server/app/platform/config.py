@@ -1,14 +1,26 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    # "ollama" (local) or "openrouter" (hosted API).
+    llm_provider: str = "ollama"
+
     ollama_host: str = ""
     ollama_model: str = ""
     ollama_num_ctx: int = 8192
+
+    openrouter_api_key: SecretStr | None = None
+    # OpenRouter model slug, e.g. "anthropic/claude-haiku-4.5".
+    openrouter_model: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    # Comma-separated fallback slugs, tried in order after openrouter_model fails
+    # (e.g. "some-model:free"). Empty = no fallback.
+    openrouter_fallback_models: str = ""
 
     brave_api_key: str = ""
 
@@ -40,6 +52,10 @@ class Settings(BaseSettings):
     # Cookies: Secure should be True behind HTTPS in production.
     cookie_secure: bool = False
     cookie_samesite: str = "strict"
+
+    @property
+    def openrouter_fallback_list(self) -> list[str]:
+        return [m.strip() for m in self.openrouter_fallback_models.split(",") if m.strip()]
 
     @property
     def cors_origins_list(self) -> list[str]:

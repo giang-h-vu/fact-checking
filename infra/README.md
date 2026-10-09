@@ -69,7 +69,7 @@ kubectl apply -f infra/k8s/gateway.yaml
 kubectl apply -f infra/k8s/ollama/ -f infra/k8s/server/ -f infra/k8s/web/
 ```
 
-The sensitive config — `JWT_SECRET`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BRAVE_API_KEY` (see the Configuration table in [`server/README.md`](../server/README.md)) — is delivered as a k8s Secret, created imperatively from a git-ignored `.env.prod` file (never committed):
+The sensitive config — `JWT_SECRET`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BRAVE_API_KEY`, `OPENROUTER_API_KEY` (see the Configuration table in [`server/README.md`](../server/README.md)) — is delivered as a k8s Secret, created imperatively from a git-ignored `.env.prod` file (never committed):
 
 ```bash
 kubectl create secret generic app-secrets --from-env-file=.env.prod -n fact-checking
