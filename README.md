@@ -8,7 +8,7 @@ Live at **https://factchecking.dpdns.org** (when the demo cluster is running).
 
 ## How it works
 
-A claim flows through a LangGraph pipeline of three agents, each powered by a local LLM (Ollama):
+A claim flows through a LangGraph pipeline of three agents, each powered by an LLM — hosted via [OpenRouter](https://openrouter.ai) (default) or local via Ollama:
 
 ```
             ┌──────────────────┐    ┌─────────────────────┐    ┌──────────────────────┐
@@ -40,7 +40,7 @@ The pipeline streams named Server-Sent Events as it runs; the React client rende
 
 | Layer | Technology |
 |---|---|
-| LLM runtime | Ollama (default model `qwen2.5:7b-instruct`) |
+| LLM runtime | OpenRouter (default, e.g. `anthropic/claude-haiku-4.5`) or Ollama (`qwen2.5:7b-instruct`), selected by `LLM_PROVIDER` |
 | Agents | LangGraph + LangChain |
 | Backend | FastAPI · Pydantic v2 · SQLite · sse-starlette |
 | Frontend | React 18 · Redux Toolkit · MUI v5 · Vite · TypeScript (strict) |
@@ -50,23 +50,31 @@ The pipeline streams named Server-Sent Events as it runs; the React client rende
 
 ## Run it locally
 
-Requires Docker with Compose v2, and **Google OAuth credentials** (the app has a login screen — create an OAuth client in [Google Cloud Console](https://console.cloud.google.com) and put the ID/secret in `server/.env`; details in [`server/README.md`](server/README.md)).
+Requires Docker with Compose v2, **Google OAuth credentials** (the app has a login screen — create an OAuth client in [Google Cloud Console](https://console.cloud.google.com) and put the ID/secret in `server/.env`; details in [`server/README.md`](server/README.md)), and an LLM backend:
+
+**OpenRouter (default)** — set `LLM_PROVIDER=openrouter`, `OPENROUTER_API_KEY` ([get one](https://openrouter.ai/keys); paid models need credits) and `OPENROUTER_MODEL` in `server/.env`, then:
 
 ```bash
 docker compose up -d --build
+```
+
+**Ollama (local)** — set `LLM_PROVIDER=ollama` and `OLLAMA_MODEL`, then enable the `ollama` profile:
+
+```bash
+docker compose --profile ollama up -d --build
 # First run downloads qwen2.5:7b-instruct (~4.7 GB). A GPU helps; CPU works but is slow.
 ```
 
-Open **http://localhost**. The API is at `http://localhost:8000` (Swagger UI at `/docs`).
+Open **http://localhost**. The API is at `http://localhost:8000` (Swagger UI at `/docs`). Compose uses `http://localhost/api/v1/auth/google/callback` as the OAuth redirect URI, so register it in Google Cloud Console.
 
-For native development with hot reload (Ollama in Docker, server/client on the host), see [`server/README.md`](server/README.md) and [`web-client/README.md`](web-client/README.md).
+For native development with hot reload (server/client on the host), see [`server/README.md`](server/README.md) and [`web-client/README.md`](web-client/README.md).
 
 ## Repo layout
 
 | Path | Purpose |
 |---|---|
 | [`api/`](api/README.md) | OpenAPI spec + codegen tooling. Single source of truth for the public contract. |
-| [`server/`](server/README.md) | FastAPI + LangGraph + Ollama backend — agents, config, tests. |
+| [`server/`](server/README.md) | FastAPI + LangGraph backend (OpenRouter or Ollama) — agents, config, tests. |
 | [`web-client/`](web-client/README.md) | React + Redux web client — streaming, type safety. |
 | [`infra/`](infra/README.md) | Terraform (AKS cluster) + Kubernetes manifests + deployment. |
-| `docker-compose.yml` | Full-stack local run (Ollama + server + web). |
+| `docker-compose.yaml` | Full-stack local run (server + web; Ollama via `--profile ollama`). |

@@ -92,7 +92,7 @@ src/
 | ----------- | ----------------------------------------------------------- |
 | `/`         | `Home.tsx` — search + live progress + final verdict         |
 | `/history`  | `History.tsx` — past verifications                          |
-| `/workings` | `HowItWorks.tsx` — static explanation of the agent pipeline |
+| `/about`    | `HowItWorks.tsx` — static explanation of the agent pipeline |
 | `/login`    | `Login.tsx` — Google OAuth sign-in                          |
 
 ## Regenerating types

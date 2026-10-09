@@ -43,7 +43,7 @@ Google OAuth 2.0 (`app/api/auth.py` + `app/platform/auth/`): the OAuth dance pro
 
 - **FastAPI** + Pydantic v2 (HTTP layer) + **sse-starlette** (streaming)
 - **LangGraph + LangChain** (agent orchestration)
-- **Ollama** (local LLM runtime — default `qwen2.5:7b-instruct`)
+- **OpenRouter** (hosted LLM API, default) or **Ollama** (local runtime, `qwen2.5:7b-instruct`) — chosen by `LLM_PROVIDER`
 - **httpx + trafilatura** (concurrent page fetching)
 - **SQLModel + aiosqlite** (verification history, async SQLite)
 - **uv** (dependency manager)
@@ -51,14 +51,16 @@ Google OAuth 2.0 (`app/api/auth.py` + `app/platform/auth/`): the OAuth dance pro
 ## Setup & run
 
 ```bash
-# Ollama must be running first (from repo root)
-docker compose up -d ollama
-docker exec -it ollama ollama pull qwen2.5:7b-instruct   # or llama3.1:70b-instruct
-
 # Install deps + configure
 uv sync
 cp .env.example .env
-# Fill in Google OAuth credentials + JWT/session secrets.
+# Fill in Google OAuth credentials + JWT/session secrets, then pick an LLM backend:
+#   LLM_PROVIDER=openrouter  + OPENROUTER_API_KEY + OPENROUTER_MODEL
+#   LLM_PROVIDER=ollama      + OLLAMA_HOST + OLLAMA_MODEL (see below)
+
+# Ollama only: start it first (from repo root) and pull the model
+docker compose --profile ollama up -d ollama
+docker exec -it ollama ollama pull qwen2.5:7b-instruct   # or llama3.1:70b-instruct
 
 # Run
 uv run uvicorn app.main:app --reload --port 8000
@@ -71,6 +73,12 @@ All settings load from `.env` via pydantic-settings (`app/platform/config.py`):
 
 | Variable | Default | Description |
 |---|---|---|
+| `LLM_PROVIDER` | `ollama` | `openrouter` (hosted) or `ollama` (local) |
+| `OPENROUTER_API_KEY` | — | Required for `openrouter`. [openrouter.ai/keys](https://openrouter.ai/keys) — paid models need credits |
+| `OPENROUTER_MODEL` | — | Model slug, e.g. `anthropic/claude-haiku-4.5` |
+| `OPENROUTER_FALLBACK_MODELS` | — | Optional comma-separated slugs tried in order if the primary errors (e.g. `:free` models that list structured-output support) |
+| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | Override only for a proxy |
+| `OLLAMA_HOST` | — | e.g. `http://localhost:11434` (for `ollama`) |
 | `OLLAMA_MODEL` | — | Model tag, e.g. `qwen2.5:7b-instruct` |
 | `OLLAMA_NUM_CTX` | `8192` | Context window tokens |
 | `SEARCH_RESULTS_PER_QUERY` | `3` | Hits per search query |
@@ -86,10 +94,16 @@ All settings load from `.env` via pydantic-settings (`app/platform/config.py`):
 
 ### Model choice
 
+**OpenRouter.** One model serves all three agents. `evidence_retrieval` makes one call per fetched page, so prefer a cheap, structured-output-capable model. `get_llm()` sends `provider.require_parameters: true`, so requests only route to providers that support `response_format: json_schema`; a model with no such provider returns an error rather than unparsed text. Free (`:free`) models are rate-limited and rarely suit a primary role.
+
+**Ollama.**
+
 | Model | VRAM | Notes |
 |---|---|---|
 | `llama3.1:70b-instruct` | ~48 GB | Best quality |
 | `qwen2.5:7b-instruct` | ~8 GB | Good enough for development |
+
+`get_llm()` is cached: restart the server after changing any LLM setting.
 
 ## Tests
 
@@ -122,7 +136,7 @@ app/
 │   └── state.py           # FactCheckState — internal pipeline state, distinct from API models
 └── platform/
     ├── config.py          # pydantic-settings, loads .env
-    ├── llm.py             # cached ChatOllama factory
+    ├── llm.py             # get_llm(): ChatOpenAI (OpenRouter) or ChatOllama, per LLM_PROVIDER
     ├── auth/              # OAuth client, JWT tokens, cookies, route dependencies
     └── db/                # SQLModel models + async session factory
 ```
