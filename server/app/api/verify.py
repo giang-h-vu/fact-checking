@@ -39,6 +39,7 @@ from app.domain.state import (
 from app.platform.auth.dependencies import get_current_user
 from app.platform.db.models import Citation, SearchRequest, User
 from app.platform.db.session import session_scope
+from app.platform.tracing import trace_config
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +128,11 @@ async def _event_stream(req: VerifyRequest, user_id: int) -> AsyncIterator[dict[
 
     verification: VerificationOutput | None = None
     try:
-        async for update in graph.astream(initial, stream_mode="updates"):
+        async for update in graph.astream(
+            initial,
+            stream_mode="updates",
+            config=trace_config(user_id, initial.prefer_source),
+        ):
             for node, delta in update.items():
                 if delta is None:
                     continue

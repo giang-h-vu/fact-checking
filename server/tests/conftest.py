@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -8,6 +9,11 @@ from sqlmodel import SQLModel
 from app.platform.config import get_settings
 from app.platform.db.models import RefreshToken, SearchRequest, User
 from app.platform.db.session import _engine, _sessionmaker
+
+# Tests never send traces. Env beats server/.env, so this overrides a developer's
+# LANGSMITH_TRACING=true; the second name is LangChain's own legacy auto-tracing switch.
+os.environ["LANGSMITH_TRACING"] = "false"
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 
 @pytest.fixture(autouse=True)

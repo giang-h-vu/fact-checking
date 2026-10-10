@@ -24,6 +24,13 @@ class Settings(BaseSettings):
 
     brave_api_key: str = ""
 
+    # LangSmith tracing, opt-in. Raw page text is scrubbed before upload (app/platform/tracing.py).
+    langsmith_tracing: bool = False
+    langsmith_api_key: SecretStr | None = None
+    langsmith_project: str = "fact-checking"
+    # EU workspaces: https://eu.api.smith.langchain.com. Empty = SDK default (US).
+    langsmith_endpoint: str = ""
+
     database_url: str = ""
 
     http_timeout_seconds: float = 20.0

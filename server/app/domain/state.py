@@ -12,7 +12,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel
 
-from app.tools.sources import FetchedPage, SearchHit
+from app.tools.sources import Passage, SearchHit
 
 
 class Verdict(StrEnum):
@@ -46,7 +46,7 @@ class SearchOutput(BaseModel):
 
 
 class RetrievalOutput(BaseModel):
-    evidence: list[FetchedPage] = []
+    evidence: list[Passage] = []
 
 
 class VerificationOutput(BaseModel):

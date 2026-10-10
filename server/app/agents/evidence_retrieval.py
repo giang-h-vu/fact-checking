@@ -20,7 +20,7 @@ from app.domain.state import FactCheckState, RetrievalOutput
 from app.platform.config import get_settings
 from app.platform.llm import get_llm
 from app.tools import fetch_url
-from app.tools.sources import FetchedPage
+from app.tools.sources import FetchedPage, Passage
 
 log = logging.getLogger(__name__)
 
@@ -88,10 +88,10 @@ async def evidence_retrieval_agent(state: FactCheckState) -> RetrievalOutput:
     log.info("Fetched %d/%d pages", len(pages), len(state.candidates))
 
     passages = await gather(*(_extract_passage(state.claim, page) for page in pages))
-    evidence: list[FetchedPage] = []
+    evidence: list[Passage] = []
     for page, passage in zip(pages, passages, strict=False):
         if passage:
-            evidence.append(FetchedPage(url=page.url, title=page.title, text=passage))
+            evidence.append(Passage(url=page.url, title=page.title, text=passage))
 
     log.info("Kept %d passages with evidence", len(evidence))
     return RetrievalOutput(evidence=evidence)

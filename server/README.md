@@ -84,6 +84,10 @@ All settings load from `.env` via pydantic-settings (`app/platform/config.py`):
 | `SEARCH_RESULTS_PER_QUERY` | `3` | Hits per search query |
 | `MAX_CONCURRENT_FETCHES` | `3` | Parallel URL fetches |
 | `BRAVE_API_KEY` | — | Optional; enables Brave search engine |
+| `LANGSMITH_TRACING` | `false` | Send run traces to LangSmith; raw page text is scrubbed, only extracted passages are kept. Forced off in tests |
+| `LANGSMITH_API_KEY` | — | Required when tracing is on |
+| `LANGSMITH_PROJECT` | `fact-checking` | LangSmith project to file traces under |
+| `LANGSMITH_ENDPOINT` | — | Only for EU workspaces: `https://eu.api.smith.langchain.com` |
 | `GOOGLE_CLIENT_ID` | — | From Google Cloud Console OAuth client |
 | `GOOGLE_CLIENT_SECRET` | — | From Google Cloud Console OAuth client |
 | `JWT_SECRET` | — | Random secret ≥32 chars — `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
