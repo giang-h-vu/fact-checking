@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import httpx
 from langchain_core.tools import tool
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from app.platform.config import get_settings
-from app.tools.sources import SearchHit
+from app.tools.sources import SearchHit, is_transient
 
 BRAVE_URL = "https://api.search.brave.com/res/v1/web/search"
 
@@ -16,7 +16,7 @@ BRAVE_URL = "https://api.search.brave.com/res/v1/web/search"
     reraise=True,
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=8),
-    retry=retry_if_exception_type((httpx.HTTPError,)),
+    retry=retry_if_exception(is_transient),
 )
 async def _search(query: str, count: int) -> list[SearchHit]:
     settings = get_settings()
@@ -49,9 +49,5 @@ async def _search(query: str, count: int) -> list[SearchHit]:
 
 @tool
 async def brave_search(query: str, count: int = 3) -> list[SearchHit]:
-    """Search Brave for the given query and return up to `count` web results.
-
-    Best for: general web evidence; an independent high-quality index that
-    complements DuckDuckGo. Returns: list of {url, title, snippet, source}.
-    """
+    """Search Brave for the given query and return up to `count` web results."""
     return await _search(query, min(max(count, 1), 10))

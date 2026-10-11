@@ -47,6 +47,7 @@ class Verdict(Enum):
 
 
 class SseEventType(Enum):
+    plan_created = 'plan_created'
     search_started = 'search_started'
     candidates_found = 'candidates_found'
     passage_found = 'passage_found'
@@ -93,6 +94,10 @@ class Error(BaseModel):
     code: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
+
+class PlanCreatedPayload(BaseModel):
+    subclaims: List[str]
 
 
 class SearchStartedPayload(BaseModel):

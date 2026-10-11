@@ -12,9 +12,12 @@ Only the extracted `Passage` text is ever traced.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import Any
 
+from langchain_core.callbacks.manager import AsyncCallbackManager
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith import Client
@@ -22,7 +25,7 @@ from langsmith import Client
 from app.platform.config import get_settings
 
 # Must match the header in evidence_retrieval.PASSAGE_PROMPT (tests/test_tracing.py checks).
-ARTICLE_HEADER = "Article (truncated):\n"
+ARTICLE_HEADER = "Article (excerpt):\n"
 
 
 def _scrub(value: Any) -> Any:
@@ -56,6 +59,27 @@ def trace_config(user_id: int, prefer_source: str) -> RunnableConfig:
     # call tracer.wait_for_futures() in a lifespan hook if that matters.
     return {
         "callbacks": [LangChainTracer(client=_client(), project_name=s.langsmith_project)],
-        "run_name": "fact-check",
         "metadata": {"user_id": user_id, "prefer_source": prefer_source},
     }
+
+
+@asynccontextmanager
+async def fact_check_run(claim: str, config: RunnableConfig) -> AsyncIterator[RunnableConfig]:
+    """One parent run, so research and verification show up as a single trace.
+
+    `config` is `trace_config()`'s. Yields the config to hand to the work inside: its
+    callbacks nest every run under "fact-check". Empty in, empty out (tracing off).
+    """
+    if not config.get("callbacks"):
+        yield {}
+        return
+    manager = AsyncCallbackManager.configure(
+        inheritable_callbacks=config["callbacks"], inheritable_metadata=config.get("metadata")
+    )
+    run = await manager.on_chain_start({"name": "fact-check"}, {"claim": claim}, name="fact-check")
+    try:
+        yield {"callbacks": run.get_child()}
+    except BaseException as e:  # incl. a client disconnect: the run must not stay open
+        await run.on_chain_error(e)
+        raise
+    await run.on_chain_end({})

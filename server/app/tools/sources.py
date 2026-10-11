@@ -4,9 +4,21 @@ from __future__ import annotations
 
 from typing import Literal
 
+import httpx
 from pydantic import BaseModel, Field
 
 SearchSource = Literal["duckduckgo", "brave", "wikipedia"]
+
+
+def is_transient(exc: BaseException) -> bool:
+    """Worth another try: the network hiccuped or the server erred.
+
+    A 4xx (403 paywall, 404, 429) answers the same again, so retrying only burns time and
+    quota; the caller has its own fallback for those.
+    """
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code >= 500
+    return isinstance(exc, httpx.TransportError)
 
 
 class SearchHit(BaseModel):

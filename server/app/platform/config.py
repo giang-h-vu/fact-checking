@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Comma-separated fallback slugs, tried in order after openrouter_model fails
     # (e.g. "some-model:free"). Empty = no fallback.
     openrouter_fallback_models: str = ""
+    # Client-side cap on model calls. OpenRouter allows free models and new accounts
+    # 20 requests/min; 18 leaves a margin for the limiter's first-minute burst. 0 = off.
+    openrouter_requests_per_minute: int = 18
 
     brave_api_key: str = ""
 
@@ -36,6 +39,14 @@ class Settings(BaseSettings):
     http_timeout_seconds: float = 20.0
     max_concurrent_fetches: int = 3
     search_results_per_query: int = 3
+
+    # --- Research agent bounds (app/agents/orchestrator.py) -----------------
+    # When any trips, the run goes on to verification with what it has collected.
+    agent_max_subclaims: int = 5
+    agent_max_retries: int = 2  # extra research attempts per sub-claim after the first
+    agent_max_turns: int = 12  # orchestrator LLM turns
+    agent_max_tool_calls: int = 8  # per research subagent
+    agent_timeout_seconds: float = 120.0  # whole research phase
 
     cors_origins: str = ""
 

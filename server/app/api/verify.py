@@ -1,7 +1,7 @@
 """POST /api/v1/verify — stream agent progress as SSE.
 
-Drives the LangGraph compiled in app.agents.graph and translates per-node
-state updates into the named SSE events documented in /api/openapi.yaml.
+Runs the research agents (app.agents.orchestrator), then verifies each sub-claim's
+passages, translating both into the named SSE events documented in /api/openapi.yaml.
 
 On the final verdict we persist a SearchRequest + Citations row so
 GET /api/v1/history can show past runs.
@@ -18,34 +18,32 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from app.agents.graph import GraphNode, build_graph
+from app.agents.claim_verification import verify_subclaims
+from app.agents.orchestrator import research
+from app.agents.run import PassageFound, PlanCreated, ResearchDone, SearchRan
 from app.api.generated.models import (
     CandidatesFoundPayload,
     Error,
     FinalVerdictPayload,
     PassageFoundPayload,
     PassageVerdictPayload,
+    PlanCreatedPayload,
     SearchStartedPayload,
     SseEventType,
     VerifyRequest,
 )
-from app.domain.state import (
-    FactCheckState,
-    RetrievalOutput,
-    SearchOutput,
-    Verdict,
-    VerificationOutput,
-)
+from app.domain.state import FactCheckState, PreferSource, Verdict
 from app.platform.auth.dependencies import get_current_user
 from app.platform.db.models import Citation, SearchRequest, User
 from app.platform.db.session import session_scope
-from app.platform.tracing import trace_config
+from app.platform.tracing import fact_check_run, trace_config
 
 log = logging.getLogger(__name__)
 
 # Single source of truth for which payload schema belongs to which SSE event.
 # The @overload signatures enforce the same pairing at type-check time;
 EVENT_PAYLOAD: dict[SseEventType, type[BaseModel] | None] = {
+    SseEventType.plan_created: PlanCreatedPayload,
     SseEventType.search_started: SearchStartedPayload,
     SseEventType.candidates_found: CandidatesFoundPayload,
     SseEventType.passage_found: PassageFoundPayload,
@@ -56,6 +54,8 @@ EVENT_PAYLOAD: dict[SseEventType, type[BaseModel] | None] = {
 }
 
 
+@overload
+def sse(event: Literal[SseEventType.plan_created], data: PlanCreatedPayload) -> dict[str, str]: ...
 @overload
 def sse(
     event: Literal[SseEventType.search_started], data: SearchStartedPayload
@@ -119,84 +119,77 @@ async def _persist(state: FactCheckState, user_id: int) -> None:
 
 
 async def _event_stream(req: VerifyRequest, user_id: int) -> AsyncIterator[dict[str, str]]:
-    graph = build_graph()
-    initial = FactCheckState(
-        claim=req.claim,
-        prefer_source=req.prefer_source.value if req.prefer_source else "auto",
-        retries=0,
-    )
-
-    verification: VerificationOutput | None = None
+    prefer: PreferSource = req.prefer_source.value if req.prefer_source else "auto"
+    done: ResearchDone | None = None
     try:
-        async for update in graph.astream(
-            initial,
-            stream_mode="updates",
-            config=trace_config(user_id, initial.prefer_source),
-        ):
-            for node, delta in update.items():
-                if delta is None:
-                    continue
-                if node == GraphNode.SEARCH:
-                    search = SearchOutput.model_validate(delta)
+        async with fact_check_run(req.claim, trace_config(user_id, prefer)) as run_config:
+            async for event in research(req.claim, prefer, run_config):
+                if isinstance(event, PlanCreated):
                     yield sse(
-                        SseEventType.search_started,
-                        SearchStartedPayload(queries=search.search_queries),
+                        SseEventType.plan_created, PlanCreatedPayload(subclaims=event.subclaims)
                     )
-                    # candidates are internal SearchHit; the wire shape is SearchCandidate
+                elif isinstance(event, SearchRan):
+                    yield sse(
+                        SseEventType.search_started, SearchStartedPayload(queries=[event.query])
+                    )
+                    # hits are internal SearchHit; the wire shape is SearchCandidate
                     yield sse(
                         SseEventType.candidates_found,
                         CandidatesFoundPayload.model_validate(
-                            {"items": [c.model_dump(mode="json") for c in search.candidates]}
+                            {"items": [h.model_dump(mode="json") for h in event.hits]}
                         ),
                     )
-                elif node == GraphNode.RETRIEVE:
-                    retrieval = RetrievalOutput.model_validate(delta)
-                    for ev in retrieval.evidence:
-                        yield sse(
-                            SseEventType.passage_found,
-                            PassageFoundPayload.model_validate(
-                                {"url": ev.url, "title": ev.title, "passage": ev.text}
-                            ),
-                        )
-                elif node == GraphNode.VERIFY:
-                    verification = VerificationOutput.model_validate(delta)
-                    for v in verification.passage_verdicts:
-                        yield sse(
-                            SseEventType.passage_verdict,
-                            PassageVerdictPayload.model_validate(
-                                {"url": v.url, "label": v.label, "reasoning": v.reasoning}
-                            ),
-                        )
+                elif isinstance(event, PassageFound):
+                    p = event.passage
                     yield sse(
-                        SseEventType.final_verdict,
-                        FinalVerdictPayload.model_validate(
-                            {
-                                "verdict": verification.final_verdict or Verdict.NOT_ENOUGH_INFO,
-                                "citations": [
-                                    c.model_dump(mode="json") for c in verification.citations
-                                ],
-                            }
+                        SseEventType.passage_found,
+                        PassageFoundPayload.model_validate(
+                            {"url": p.url, "title": p.title, "passage": p.text}
                         ),
                     )
-        if verification is not None:
-            await _persist(
-                initial.model_copy(
-                    update={
-                        "final_verdict": verification.final_verdict,
-                        "citations": verification.citations,
-                        "passage_verdicts": verification.passage_verdicts,
-                    }
-                ),
-                user_id,
-            )
-        else:
-            raise RuntimeError("Verification did not complete")
+                elif isinstance(event, ResearchDone):
+                    done = event
+            if done is None:
+                raise RuntimeError("Research did not complete")
 
+            verification = await verify_subclaims(
+                done.subclaims, done.passages, run_config, done.combined
+            )
+        for v in verification.passage_verdicts:
+            yield sse(
+                SseEventType.passage_verdict,
+                PassageVerdictPayload.model_validate(
+                    {"url": v.url, "label": v.label, "reasoning": v.reasoning}
+                ),
+            )
+        yield sse(
+            SseEventType.final_verdict,
+            FinalVerdictPayload.model_validate(
+                {
+                    "verdict": verification.final_verdict or Verdict.NOT_ENOUGH_INFO,
+                    "citations": [c.model_dump(mode="json") for c in verification.citations],
+                }
+            ),
+        )
+        await _persist(
+            FactCheckState(
+                claim=req.claim,
+                final_verdict=verification.final_verdict,
+                citations=verification.citations,
+                passage_verdicts=verification.passage_verdicts,
+            ),
+            user_id,
+        )
         yield sse(SseEventType.done)
 
-    except Exception as e:
+    except Exception:
+        # The detail (provider errors can carry URLs, model names, account state) goes to
+        # the log only; the client gets a fixed message.
         log.exception("Verify stream failed")
-        yield sse(SseEventType.error, Error(code="internal", message=str(e)))
+        yield sse(
+            SseEventType.error,
+            Error(code="internal", message="The fact-check could not be completed. Try again."),
+        )
 
 
 router = APIRouter(tags=["verify"])

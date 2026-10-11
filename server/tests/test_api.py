@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 from app.api.generated.models import (
     FinalVerdictPayload,
+    PlanCreatedPayload,
     SearchStartedPayload,
     SseEventType,
     Verdict,
@@ -96,6 +97,22 @@ class TestVerifyValidation:
         assert r.status_code == 422
 
 
+class TestVerifyFailure:
+    def test_error_event_hides_the_exception_text(self, client, monkeypatch):
+        async def failing(*args, **kwargs):
+            raise RuntimeError("401 from https://openrouter.ai key=sk-or-SECRET")
+            yield  # makes this an async generator
+
+        monkeypatch.setattr("app.api.verify.research", failing)
+
+        r = client.post("/api/v1/verify", json={"claim": "ok"})
+
+        assert r.status_code == 200
+        assert "event: error" in r.text
+        assert "SECRET" not in r.text and "openrouter" not in r.text
+        assert "could not be completed" in r.text
+
+
 class TestSsePayloads:
     """
     The SSE event->payload pairing has no codegen-level enforcement.
@@ -110,6 +127,11 @@ class TestSsePayloads:
         frame = sse(SseEventType.search_started, SearchStartedPayload(queries=["a", "b"]))
         assert frame["event"] == "search_started"
         assert json.loads(frame["data"]) == {"queries": ["a", "b"]}
+
+    def test_plan_created_carries_subclaims(self):
+        frame = sse(SseEventType.plan_created, PlanCreatedPayload(subclaims=["a", "b"]))
+        assert frame["event"] == "plan_created"
+        assert json.loads(frame["data"]) == {"subclaims": ["a", "b"]}
 
     def test_done_event_has_empty_data(self):
         frame = sse(SseEventType.done)

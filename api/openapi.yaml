@@ -113,6 +113,7 @@ paths:
 
         | event            | data schema             |
         |------------------|-------------------------|
+        | plan_created     | `PlanCreatedPayload`    |
         | search_started   | `SearchStartedPayload`  |
         | candidates_found | `CandidatesFoundPayload`|
         | passage_found    | `PassageFoundPayload`   |
@@ -214,6 +215,7 @@ components:
     SseEventType:
       type: string
       enum:
+        - plan_created
         - search_started
         - candidates_found
         - passage_found
@@ -273,6 +275,15 @@ components:
     # The `data` JSON of each named SSE event.
     # These exist so both ends generate the wire shapes
     # Do not reuse them as internal pipeline state.
+    PlanCreatedPayload:
+      type: object
+      required: [subclaims]
+      description: The atomic sub-claims the agent will research; one for a simple claim.
+      properties:
+        subclaims:
+          type: array
+          items: { type: string }
+
     SearchStartedPayload:
       type: object
       required: [queries]

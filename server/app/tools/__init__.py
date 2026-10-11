@@ -1,8 +1,8 @@
-"""LangChain tools used by the LangGraph agents.
+"""LangChain tools used by the research agents.
 
-Each public symbol here is a `@tool`-decorated callable that the LLM can
-invoke by name. Keep tool docstrings short and unambiguous — the LLM reads
-them as the tool's API contract.
+Only `think_tool` is bound to a model. The search tools and `fetch_url` are called from
+Python (`researcher.run_queries` / `fetch_page`), so their docstrings are not prompts;
+what the models read about engines is in the orchestrator prompt and `SearchQuery`.
 """
 
 from langchain_core.tools import BaseTool
@@ -11,6 +11,7 @@ from app.tools.brave_search import brave_search
 from app.tools.duckduckgo_search import duckduckgo_search
 from app.tools.fetch_url import fetch_url
 from app.tools.sources import SearchSource
+from app.tools.think import think_tool
 from app.tools.wikipedia_search import wikipedia_search
 
 # Single source of truth for search engine name → tool mapping.
@@ -26,5 +27,6 @@ __all__ = [
     "brave_search",
     "duckduckgo_search",
     "fetch_url",
+    "think_tool",
     "wikipedia_search",
 ]

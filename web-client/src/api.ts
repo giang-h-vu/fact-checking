@@ -110,6 +110,7 @@ export interface paths {
          *
          *     | event            | data schema             |
          *     |------------------|-------------------------|
+         *     | plan_created     | `PlanCreatedPayload`    |
          *     | search_started   | `SearchStartedPayload`  |
          *     | candidates_found | `CandidatesFoundPayload`|
          *     | passage_found    | `PassageFoundPayload`   |
@@ -166,7 +167,7 @@ export interface components {
         /** @enum {string} */
         Verdict: "SUPPORTED" | "REFUTED" | "NOT_ENOUGH_INFO";
         /** @enum {string} */
-        SseEventType: "search_started" | "candidates_found" | "passage_found" | "passage_verdict" | "final_verdict" | "done" | "error";
+        SseEventType: "plan_created" | "search_started" | "candidates_found" | "passage_found" | "passage_verdict" | "final_verdict" | "done" | "error";
         SearchCandidate: {
             /** Format: uri */
             url: string;
@@ -200,6 +201,10 @@ export interface components {
             details?: {
                 [key: string]: unknown;
             };
+        };
+        /** @description The atomic sub-claims the agent will research; one for a simple claim. */
+        PlanCreatedPayload: {
+            subclaims: string[];
         };
         SearchStartedPayload: {
             queries: string[];

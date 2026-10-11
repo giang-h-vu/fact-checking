@@ -38,9 +38,5 @@ def _search_sync(query: str, count: int) -> list[SearchHit]:
 
 @tool
 async def duckduckgo_search(query: str, count: int = 3) -> list[SearchHit]:
-    """Search DuckDuckGo for the given query and return up to `count` web results.
-
-    Best for: general web evidence, news, blog posts, current events. No API key required.
-    Returns: list of {url, title, snippet, source}.
-    """
+    """Search DuckDuckGo for the given query and return up to `count` web results."""
     return await asyncio.to_thread(_search_sync, query, min(max(count, 1), 10))

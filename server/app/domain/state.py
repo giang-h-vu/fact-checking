@@ -1,18 +1,16 @@
 """
 Distinct from the API-facing models in app/generated/models.py: this is the
-internal pipeline state, not part of the public contract. Keep it append-only
-where possible so each agent step sees what previous agent step produced.
+internal pipeline state, not part of the public contract.
 """
 
 from __future__ import annotations
 
-import operator
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel
 
-from app.tools.sources import Passage, SearchHit
+from app.tools.sources import Passage
 
 
 class Verdict(StrEnum):
@@ -40,11 +38,6 @@ class Citation(BaseModel):
     reasoning: str = ""
 
 
-class SearchOutput(BaseModel):
-    search_queries: list[str] = []
-    candidates: list[SearchHit] = []
-
-
 class RetrievalOutput(BaseModel):
     evidence: list[Passage] = []
 
@@ -55,16 +48,7 @@ class VerificationOutput(BaseModel):
     citations: list[Citation] = []
 
 
-class FactCheckState(SearchOutput, RetrievalOutput, VerificationOutput):
-    # Input
+class FactCheckState(RetrievalOutput, VerificationOutput):
+    """One claim (or sub-claim) with the evidence gathered for it and its verdict."""
+
     claim: str
-    prefer_source: PreferSource = "auto"
-
-    # Loop control
-    retries: int = 0
-    error: str | None = None
-
-    # Override SearchOutput.search_queries with an append reducer so the planner
-    # reads the full history and avoids repeats.
-    # NOTE node return = this attempt; state value = all attempts.
-    search_queries: Annotated[list[str], operator.add] = []
