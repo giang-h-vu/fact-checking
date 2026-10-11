@@ -2,12 +2,12 @@
 
 ## What the system does
 
-A user submits a natural-language claim; three async LangGraph agents cooperate to produce a verdict (`SUPPORTED` / `REFUTED` / `NOT_ENOUGH_INFO`) with citations. Progress streams to the UI over Server-Sent Events as the agents work.
+A user submits a natural-language claim; an orchestrator agent plans sub-claims and delegates research to subagents, then a verification step produces a verdict (`SUPPORTED` / `REFUTED` / `NOT_ENOUGH_INFO`) with citations. Progress streams to the UI over Server-Sent Events as the agents work.
 
 ```
-claim ─▶ DocumentSearchAgent ─▶ EvidenceRetrievalAgent ─▶ ClaimVerificationAgent ─▶ verdict
-                                          │
-                                          └─ no evidence + retries < 2 ─▶ search again
+claim ─▶ Orchestrator (todos) ─▶ Researcher subagents (parallel) ─▶ ClaimVerificationAgent ─▶ verdict
+              ▲                          │
+              └── think_tool / retry on gaps
 ```
 
 ---
@@ -32,10 +32,11 @@ fact-checking/
 │       │   ├── auth.py               #   Google OAuth login/callback/refresh/logout/me
 │       │   └── generated/
 │       │       └── models.py         #   GENERATED Pydantic v2 models — do not edit
-│       ├── agents/                   # LangGraph nodes (all async)
-│       │   ├── graph.py              #   StateGraph with conditional retry edge
-│       │   ├── document_search.py    #   LLM plans queries; asyncio.gather dispatches
-│       │   ├── evidence_retrieval.py #   concurrent httpx fetch + LLM passage extraction
+│       ├── agents/                   # agent loops (all async)
+│       │   ├── orchestrator.py       #   todo planning + delegate loop; bounds; per-run temp dir
+│       │   ├── researcher.py         #   subagent: run_queries / fetch_page / extract_passage
+│       │   ├── run.py                #   Ctx, graph state + reducers, Event types
+│       │   ├── evidence_retrieval.py #   LLM passage extraction from one page
 │       │   └── claim_verification.py #   LLM entailment judge per passage; majority vote
 │       ├── tools/                    # LangChain @tool callables (async)
 │       │   ├── wikipedia_search.py   #   MediaWiki opensearch (always available)
@@ -44,7 +45,7 @@ fact-checking/
 │       │   ├── fetch_url.py          #   httpx + trafilatura page fetch
 │       │   └── sources.py            #   SearchHit, SearchSource types
 │       ├── domain/
-│       │   └── state.py              #   FactCheckState, Citation, PassageVerdict, Verdict
+│       │   └── state.py              #   FactCheckState (claim + evidence + verdict), Citation, PassageVerdict, Verdict
 │       └── platform/                 # cross-cutting infrastructure
 │           ├── config.py             #   pydantic-settings (Settings, get_settings())
 │           ├── llm.py                #   get_llm(): ChatOpenAI→OpenRouter or ChatOllama, per LLM_PROVIDER
@@ -107,12 +108,11 @@ make -C api generate   # regenerate both ends
 make -C api check      # CI gate — fails on drift
 ```
 
-### All agent nodes are async
+### All agent code is async
 
-All three LangGraph nodes are `async def` and use `asyncio.gather` for concurrency:
-- `document_search.py` — dispatches multiple `(query, engine)` pairs concurrently
-- `evidence_retrieval.py` — fetches all candidate URLs concurrently (capped by `max_concurrent_fetches`); extracts passages concurrently
-- `claim_verification.py` — judges all evidence passages concurrently
+- `orchestrator.py` — the orchestrator's `delegate` calls run concurrently (ToolNode gathers parallel tool calls), one researcher subagent per sub-claim
+- `researcher.py` — page fetches share one semaphore (`max_concurrent_fetches`) across all subagents
+- `claim_verification.py` — judges all evidence passages concurrently, per sub-claim
 
 This keeps the asyncio event loop free so `sse_starlette` can send keep-alive pings and the nginx gateway doesn't time out.
 
@@ -139,7 +139,7 @@ All LLM calls use `with_structured_output(Model, method="json_schema")`, not the
 | `duckduckgo` | Always (no key) | Web |
 | `brave` | `BRAVE_API_KEY` required | Web |
 
-The `DocumentSearchAgent` asks the LLM to assign each query to one engine, respecting the `prefer_source` hint (`auto` / `wiki` / `web`). If Brave is unavailable it falls back to DuckDuckGo.
+Python filters the researcher's `search` tool to the engines allowed by the `prefer_source` hint (`auto` / `wiki` / `web`) and by configured credentials; the model then picks among them per query. A rate-limited Brave call falls back to DuckDuckGo.
 
 ### Authentication — Google OAuth + access/refresh JWT hybrid
 

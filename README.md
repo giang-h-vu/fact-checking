@@ -11,21 +11,20 @@ Live at **https://factchecking.dpdns.org** (when the demo cluster is running).
 A claim flows through a LangGraph pipeline of three agents, each powered by an LLM — hosted via [OpenRouter](https://openrouter.ai) (default) or local via Ollama:
 
 ```
-            ┌──────────────────┐    ┌─────────────────────┐    ┌──────────────────────┐
- claim ───▶ │ Document Search  │ ─▶ │ Evidence Retrieval  │ ─▶ │ Claim Verification   │ ─▶ verdict
-            │ rephrase claim   │    │ fetch pages,        │    │ judge each passage,  │    + citations
-            │ into queries,    │    │ extract relevant    │    │ majority vote        │
-            │ pick engines     │    │ passages            │    │                      │
-            └──────────────────┘    └─────────────────────┘    └──────────────────────┘
-                     ▲                        │
-                     └── retry (max 2) ◀── no evidence found
+ claim ───▶ Orchestrator ── write_todos ──▶ sub-claims (1 for a simple claim)
+                │ delegate, in parallel
+                ▼
+        Researcher subagents ── search · fetch_page · extract_passage
+                │ passages (raw pages stay in per-run files)
+                ▼
+        Claim Verification, per sub-claim ──▶ verdict + citations
 ```
 
-1. **Document Search** — the LLM rephrases the claim into 1–3 search queries and chooses search engines (Wikipedia, DuckDuckGo and Brave).
-2. **Evidence Retrieval** — candidate URLs are fetched concurrently; for each page the LLM extracts the sentences most relevant to the claim.
-3. **Claim Verification** — the LLM judges entailment per passage; a majority vote across passages produces the final verdict.
+1. **Plan** — the orchestrator splits the claim into atomic sub-claims ("A and B" becomes two) and keeps a todo list.
+2. **Research** — one subagent per sub-claim searches Wikipedia / DuckDuckGo / Brave, fetches pages, and extracts the relevant sentences. Each runs in its own context, so page text never reaches the orchestrator; it only sees a short summary. It writes the search queries and, when evidence is thin or one-sided, retries a sub-claim with new queries or with a new focus that re-reads the pages already saved (no new search or fetch).
+3. **Verification** — the LLM judges entailment per passage; a majority vote gives each sub-claim's verdict, and the overall verdict is REFUTED if any part is refuted, SUPPORTED only if every part is.
 
-If no evidence is found, the graph loops back to search (up to 2 retries) before giving up with `NOT_ENOUGH_INFO`.
+Research is bounded (sub-claims, retries, turns, tool calls, wall-clock; see the `AGENT_*` settings). When a bound trips, the run verifies what it has, so the worst case is `NOT_ENOUGH_INFO`, not an error.
 
 The pipeline streams named Server-Sent Events as it runs; the React client renders an agent timeline that fills in live, so you see *why* the verdict is what it is, not just the answer.
 
