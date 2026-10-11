@@ -6,6 +6,7 @@ data:
   LLM_PROVIDER: "openrouter" # "ollama" needs infra/k8s/optional/ollama applied first
   OPENROUTER_MODEL: "anthropic/claude-haiku-4.5" # OPENROUTER_API_KEY lives in the app-secrets Secret
   OPENROUTER_FALLBACK_MODELS: "" # comma-separated fallback slugs, e.g. free models
+  OPENROUTER_REQUESTS_PER_MINUTE: "18" # client-side cap; 0 = off once the account allows more
   OLLAMA_HOST: "http://ollama:11434" # DNS name of the ollama Service
   OLLAMA_MODEL: "qwen2.5:7b-instruct"
   OLLAMA_NUM_CTX: "8192"
