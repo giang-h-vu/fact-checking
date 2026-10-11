@@ -2,6 +2,7 @@ import type { Reducer } from "@reduxjs/toolkit";
 import type { FactcheckState, Progress } from "~/types/domain";
 import {
   WILL_CHECK_FACT,
+  PLAN_CREATED,
   SEARCH_STARTED,
   CANDIDATES_FOUND,
   PASSAGE_FOUND,
@@ -18,6 +19,7 @@ import type { FactcheckAction } from "~/store/actions/factcheckActions";
 export type { FactcheckState };
 
 const emptyProgress = (): Progress => ({
+  plan: [],
   queries: [],
   candidates: [],
   passages: [],
@@ -49,10 +51,25 @@ const factcheckReducer = (
         citations: [],
         error: null,
       };
+    case PLAN_CREATED:
+      return { ...state, progress: { ...state.progress, plan: action.data.subclaims } };
+    // The agent searches repeatedly, so queries and candidates accumulate.
     case SEARCH_STARTED:
-      return { ...state, progress: { ...state.progress, queries: action.data.queries ?? [] } };
-    case CANDIDATES_FOUND:
-      return { ...state, progress: { ...state.progress, candidates: action.data.items ?? [] } };
+      return {
+        ...state,
+        progress: {
+          ...state.progress,
+          queries: [...state.progress.queries, ...(action.data.queries ?? [])],
+        },
+      };
+    case CANDIDATES_FOUND: {
+      const known = new Set(state.progress.candidates.map((c) => c.url));
+      const fresh = (action.data.items ?? []).filter((c) => !known.has(c.url));
+      return {
+        ...state,
+        progress: { ...state.progress, candidates: [...state.progress.candidates, ...fresh] },
+      };
+    }
     case PASSAGE_FOUND:
       return {
         ...state,

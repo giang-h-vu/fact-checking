@@ -5,6 +5,7 @@ import type { VerifyRequest, SseEventType, HistoryItem } from "~/types/api";
 import type { SsePayloadMap } from "~/types/sse";
 
 export const WILL_CHECK_FACT = "AGENT/WILL_CHECK_FACT" as const;
+export const PLAN_CREATED = "AGENT/PLAN_CREATED" as const;
 export const SEARCH_STARTED = "AGENT/SEARCH_STARTED" as const;
 export const CANDIDATES_FOUND = "AGENT/CANDIDATES_FOUND" as const;
 export const PASSAGE_FOUND = "AGENT/PASSAGE_FOUND" as const;
@@ -17,6 +18,7 @@ export const GET_HISTORY_SUCCESS = "AGENT/GET_HISTORY_SUCCESS" as const;
 export const GET_HISTORY_FAILURE = "AGENT/GET_HISTORY_FAILURE" as const;
 
 const SSE_TO_ACTION: Record<SseEventType, string> = {
+  plan_created: PLAN_CREATED,
   search_started: SEARCH_STARTED,
   candidates_found: CANDIDATES_FOUND,
   passage_found: PASSAGE_FOUND,
@@ -33,6 +35,7 @@ const SSE_TO_ACTION: Record<SseEventType, string> = {
  */
 export type FactcheckAction =
   | { type: typeof WILL_CHECK_FACT; claim: string }
+  | { type: typeof PLAN_CREATED; data: SsePayloadMap["plan_created"] }
   | { type: typeof SEARCH_STARTED; data: SsePayloadMap["search_started"] }
   | { type: typeof CANDIDATES_FOUND; data: SsePayloadMap["candidates_found"] }
   | { type: typeof PASSAGE_FOUND; data: SsePayloadMap["passage_found"] }

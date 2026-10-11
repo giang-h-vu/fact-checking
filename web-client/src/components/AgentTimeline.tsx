@@ -23,9 +23,10 @@ export default function AgentTimeline() {
   const fetchingAnswer = useSelector((state: RootState) => state.factcheck.fetchingAnswer);
   const verdict = useSelector((state: RootState) => state.factcheck.verdict);
 
-  const { queries, candidates, passages, passageVerdicts } = progress;
+  const { plan, queries, candidates, passages, passageVerdicts } = progress;
 
   if (
+    !plan.length &&
     !queries.length &&
     !candidates.length &&
     !passages.length &&
@@ -39,6 +40,31 @@ export default function AgentTimeline() {
     <CardBox>
       <Typography variant="h6">Agent progress</Typography>
       {fetchingAnswer && <LinearProgress sx={{ mt: 1 }} />}
+
+      {plan.length > 0 && (
+        <Fade in appear>
+          <Section>
+            <Typography variant="subtitle2">
+              {plan.length === 1 ? "Checking" : `Plan: ${plan.length} sub-claims`}
+            </Typography>
+            {plan.map((c, i) => (
+              <Chip
+                key={i}
+                label={c}
+                color="primary"
+                size="small"
+                // sub-claims are sentences: let them wrap instead of truncating
+                sx={{
+                  mr: 0.5,
+                  mb: 0.5,
+                  height: "auto",
+                  "& .MuiChip-label": { whiteSpace: "normal" },
+                }}
+              />
+            ))}
+          </Section>
+        </Fade>
+      )}
 
       {queries.length > 0 && (
         <Fade in appear>

@@ -9,6 +9,7 @@ type Schemas = components["schemas"];
  * derived from api/openapi.yaml, so the wire contract has a single source.
  */
 export type SsePayloadMap = {
+  plan_created: Schemas["PlanCreatedPayload"];
   search_started: Schemas["SearchStartedPayload"];
   candidates_found: Schemas["CandidatesFoundPayload"];
   passage_found: Schemas["PassageFoundPayload"];

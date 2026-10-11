@@ -6,6 +6,7 @@ export type Passage = components["schemas"]["PassageFoundPayload"];
 export type PassageVerdict = components["schemas"]["PassageVerdictPayload"];
 
 export interface Progress {
+  plan: string[];
   queries: string[];
   candidates: SearchCandidate[];
   passages: Passage[];
