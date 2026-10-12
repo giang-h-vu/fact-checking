@@ -226,7 +226,7 @@ async def research(
         timed_out = False
 
         def collect(event: PassageFound) -> bool:
-            """Keep a passage once: no repeat."""
+            """Keep a passage once: a repeat would be judged, cited and counted twice."""
             key = (event.todo_id, event.passage.url, normalize(event.passage.text))
             if key in collected:
                 return False
