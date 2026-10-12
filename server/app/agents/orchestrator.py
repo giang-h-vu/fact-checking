@@ -68,12 +68,13 @@ brave and duckduckgo suit news, recent events and niche topics.
 
 Plan: split the claim into atomic, independently checkable assertions ("A and B" becomes
 two todos). A claim that is already atomic is ONE todo; do not invent extra ones.
-Write each todo as a declarative statement that is true or false, as the claim itself
-would read ("Vietnam's population is greater than Nigeria's"), never as an instruction
+Write each todo as a declarative statement that is true or false, never as an instruction
 ("Determine whether...", "Research..."): a later step judges the evidence against it.
+
 Set combined=true when delegating a todo whose truth needs facts from different sources
 put together: a comparison ("more populous than", "older than"), an order ("before"), a
 superlative ("the largest"). Leave it false for a single fact; most todos are.
+
 Once write_todos has returned, delegate every todo in ONE turn so they run in parallel,
 each with 1 to 3 queries (key terms, differently worded, not the whole sentence) and the
 engine each suits.
@@ -81,7 +82,9 @@ engine each suits.
 Each summary starts with how many passages were extracted, lists the pages saved for the
 todo (title, URL, and whether a passage was extracted from it) and ends with the retries
 left for it. Only passages count as evidence: what the summary itself claims without one
-is not. After the summaries, and before any retry or before finishing, call think_tool.
+is not. After each round of delegate results, call think_tool once, before delegating again or
+finishing. Skip it when the replies were only errors.
+
 Retry a todo only when you can name something not yet tried for it:
 - no passage, with the listed pages off-topic or none saved: delegate(todo_id,
   queries=[...]) with other terms, another engine, or a source that could contradict the
@@ -89,6 +92,7 @@ Retry a todo only when you can name something not yet tried for it:
 - the listed pages look right but have no passage, or the passages miss the point:
   delegate(todo_id, focus="...") naming the missing aspect (a topic, never the answer you
   hope for). This only re-reads the {pages} most recent saved pages.
+
 Stop when every todo has passages that address it, or when the only call you could write
 repeats an earlier one. A thin result is fine: you do not give a verdict, a separate step
 judges the evidence and may report there is not enough information. Finish with one
@@ -222,7 +226,7 @@ async def research(
         timed_out = False
 
         def collect(event: PassageFound) -> bool:
-            """Keep a passage once: a repeat would be judged, cited and counted twice."""
+            """Keep a passage once: no repeat."""
             key = (event.todo_id, event.passage.url, normalize(event.passage.text))
             if key in collected:
                 return False
