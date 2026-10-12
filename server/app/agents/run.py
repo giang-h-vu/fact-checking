@@ -11,18 +11,20 @@ Three kinds of data, kept apart on purpose:
   state) never sees an article.
 * Events — what the SSE layer streams. Tools emit them through the stream writer.
 
-No `from __future__ import annotations`: LangGraph reads reducers from the live
-`Annotated[...]` hints.
+LangGraph reads reducers from the live `Annotated[...]` hints.
 """
 
 import asyncio
 import operator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated, NotRequired
 
 from langchain.agents import AgentState
 from pydantic import BaseModel, Field
+
+# pydantic rejects `typing.TypedDict` in a state schema on Python < 3.12
+from typing_extensions import TypedDict
 
 from app.domain.state import PreferSource
 from app.platform.config import Settings
