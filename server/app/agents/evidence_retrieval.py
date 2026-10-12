@@ -55,10 +55,13 @@ PAGE_CHAR_LIMIT = 10000  # excerpt budget: keeps the prompt manageable for small
 # Typographic variants an LLM may normalise while quoting.
 _CHARS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-"})
 _JOINER = re.compile(r"\s*(?:\.\.\.|…)\s*")
+# Footnote markers ("[1]", "[a]") and table pipes: models drop them while quoting.
+_NOISE = re.compile(r"\[(?:\d+|[a-z]|citation needed)\]|\|")
 
 
 def normalize(text: str) -> str:
-    return " ".join(unicodedata.normalize("NFKC", text).translate(_CHARS).split())
+    text = unicodedata.normalize("NFKC", text).translate(_CHARS)
+    return " ".join(_NOISE.sub(" ", text).split())
 
 
 def keep_verbatim(passage: str, article: str) -> str | None:

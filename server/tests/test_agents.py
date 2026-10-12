@@ -160,6 +160,11 @@ class TestVerbatimGuard:
     def test_quote_and_whitespace_variants_still_match(self):
         assert keep_verbatim('It is "330 m" tall - a record.', self.ARTICLE) is not None
 
+    def test_footnote_markers_and_table_pipes_are_ignored(self):
+        article = "A federal republic[1] of 50 states.[2][3]\nAlabama | Montgomery | 1819 |"
+        assert keep_verbatim("A federal republic of 50 states.", article) is not None
+        assert keep_verbatim("Alabama Montgomery 1819", article) is not None
+
 
 class TestBestExcerpt:
     LEAD = "Overview of a very long page."

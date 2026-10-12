@@ -87,7 +87,7 @@ async def fetch_url(url: str) -> FetchedPage:
         trafilatura.extract(
             html,
             include_comments=False,
-            include_tables=False,
+            include_tables=True,
             favor_recall=True,
         )
         or ""
