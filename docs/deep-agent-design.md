@@ -1,9 +1,6 @@
 # Deep-agent redesign: decisions and reasons
 
-Branch: `feat/autonomous-agent`. Status: **implemented** (see "As built" at the end).
-Every decision below says what was chosen and why, so it can be reviewed later.
-D1–D2 were confirmed by the user; D3–D10 were delegated ("do what you think makes
-sense") and are the author's recommendations. Challenge any of them before coding.
+Branch: `feat/autonomous-agent`. Status: **implemented**.
 
 ## Goal
 
@@ -35,13 +32,9 @@ inside the loop) if conflicting evidence turns out to be the common failure.
 
 ### D2. Todo items are sub-claims, not research tasks
 
-The orchestrator decomposes the claim into atomic assertions. A simple claim yields
-exactly one todo (same behaviour as today). Each sub-claim is researched and verified
-separately; the overall verdict is aggregated: all SUPPORTED → SUPPORTED, any REFUTED →
-REFUTED, otherwise NOT_ENOUGH_INFO.
+The orchestrator decomposes the claim into atomic assertions. A simple claim yields exactly one todo (same behaviour as today). Each sub-claim is researched and verified separately; the overall verdict is aggregated: all SUPPORTED → SUPPORTED, any REFUTED → REFUTED, otherwise NOT_ENOUGH_INFO.
 
-Why: compound claims are where the current pipeline fails (one blended verdict lets
-evidence for half the claim mask the other half), and with research tasks as todos the
+Why: compound claims are where the current pipeline fails (one blended verdict lets evidence for half the claim mask the other half), and with research tasks as todos the
 list would be narration while `think_tool` does the real planning.
 
 Consequence: `claim_verification_agent` runs once per sub-claim.
@@ -58,18 +51,14 @@ Instead: `create_react_agent` for the orchestrator and the subagent, with our ow
 `write_todos`, `think_tool` and `delegate` tools. The tool contracts match
 `deepagents`', so a later migration is mechanical.
 
-**Update:** the stack was then moved to LangChain/LangGraph 1.x (`langchain` 1.4.4,
-`langgraph` 1.2.14, `langchain-core` 1.6.9, `langchain-openai`/`-ollama` 1.x) and both
-agents now use `langchain.agents.create_agent` (`prompt=` became `system_prompt=`)
-because `langgraph.prebuilt.create_react_agent` is deprecated. This also removes the
-version conflict above, so `deepagents` is installable now; we still hand-roll
-because our `Run`-closure tools and bounds are the part that matters here.
+**Update:** the stack was then moved to LangChain/LangGraph 1.x (`langchain` 1.4.4, `langgraph` 1.2.14, `langchain-core` 1.6.9, `langchain-openai`/`-ollama` 1.x) and both agents now use `langchain.agents.create_agent` (`prompt=` became `system_prompt=`) because `langgraph.prebuilt.create_react_agent` is deprecated. 
+
+This also removes the version conflict above, so `deepagents` is installable now; we still hand-roll because our `Run`-closure tools and bounds are the part that matters here.
 `langchain-community` was dropped: nothing imported it.
 
 ### D4. Per-run context object instead of graph-state tool updates
 
-> **Superseded** by "Second pass: LangChain 1.x idioms" below. The closure design
-> was a workaround for the pinned LangGraph 0.2; kept here for the history.
+> **Superseded** by "Second pass: LangChain 1.x idioms" below. The closure design was a workaround for the pinned LangGraph 0.2; kept here for the history.
 
 Tools are built by a factory that closes over a per-request `RunContext` (todos,
 collected passages, work dir). Tools write there; the SSE layer reads it.
@@ -88,61 +77,46 @@ so `DocumentSearchAgent` is deleted.
 
 ### D6. Raw pages go to a per-run temp dir, deleted when the run ends
 
-The researcher's `fetch_page` writes the page to a file and returns only a `page_id`,
-title and size. `extract_passage(page_id)` reads the file and runs the existing
-`PASSAGE_PROMPT` extraction. Work dir is a `TemporaryDirectory` scoped to the request.
+The researcher's `fetch_page` writes the page to a file and returns only a `page_id`, title and size. `extract_passage(page_id)` reads the file and runs the existing `PASSAGE_PROMPT` extraction. 
+
+Work dir is a `TemporaryDirectory` scoped to the request.
+
 The model passes an opaque `page_id`, never a path, so it cannot read arbitrary files.
 
-Why: no cross-request state (the service must stay stateless per
-`.claude/rules/microservices.md`), nothing to garbage-collect, and pages never need to
-outlive the run because only the extracted passage is a citation.
+Why: no cross-request state (the service must stay stateless per `.claude/rules/microservices.md`), nothing to garbage-collect, and pages never need to outlive the run because only the extracted passage is a citation.
 
 ### D7. Subagent returns passages out-of-band; the orchestrator sees only summaries
 
-Extracted `Passage`s are appended to the `Run` by the extract tool. The researcher
-sees its own passages (its context is isolated and discarded), but the orchestrator's
-view of a delegation is `N passage(s) extracted from: <urls>` plus the researcher's
-short summary.
+Extracted `Passage`s are appended to the `Run` by the extract tool. The researcher sees its own passages (its context is isolated and discarded), but the orchestrator's view of a delegation is `N passage(s) extracted from: <urls>` plus the researcher's short summary.
 
-Why: page text never enters any LLM message history except the extraction call, and
-passage text never enters the orchestrator's. That makes the context-isolation goal
-and the tracing goal (next item) the same mechanism.
+**Why**: page text never enters any LLM message history except the extraction call, and passage text never enters the orchestrator's. That makes the context-isolation goal and the tracing goal (next item) the same mechanism.
 
 ### D8. Tracing scrub stays as is
 
 Because of D6/D7, raw page text is only ever in the extraction prompt, which the
-existing `ARTICLE_HEADER` cut in `app/platform/tracing.py` already handles. No new
-scrubbing code. `test_tracing.py` gets one added case: a full agent run's messages
-contain no page text.
+existing `ARTICLE_HEADER` cut in `app/platform/tracing.py` already handles.
+
+No new scrubbing code. `test_tracing.py` gets one added case: a full agent run's messages contain no page text.
 
 ### D9. Hard bounds, configurable, defaults to tune after first runs
 
 New settings with defaults: max sub-claims 5; max delegations per sub-claim 3
-(replaces `MAX_RETRIES=2`, which allowed 3 searches); max orchestrator turns 12; max
-tool calls per subagent 8; run wall-clock timeout 120 s. Plus LangGraph's
-`recursion_limit` as a backstop. When a bound trips, the run proceeds to verification
-with what it has rather than failing.
+(replaces `MAX_RETRIES=2`, which allowed 3 searches); max orchestrator turns 12; max tool calls per subagent 8; run wall-clock timeout 120 s. Plus LangGraph's
+`recursion_limit` as a backstop. 
+When a bound trips, the run proceeds to verification with what it has rather than failing.
 
-Why: an autonomous loop on a paid OpenRouter model needs a ceiling, and "verify what we
-have" degrades to NOT_ENOUGH_INFO instead of an error.
+Why: an autonomous loop on a paid OpenRouter model needs a ceiling, and "verify what we have" degrades to NOT_ENOUGH_INFO instead of an error.
 
 ### D10. UI shows the plan via one new SSE event; per-sub-claim ids deferred
 
-Add `plan_created` to `api/openapi.yaml` with payload `{subclaims: string[]}`; regenerate
-both ends; render the list in `AgentTimeline.tsx`. Existing `passage_*` and
-`final_verdict` events are unchanged. (The generated `_EnsureEveryEventCovered` guard
-forces the frontend to handle any new event, so it cannot be backend-only.)
+Add `plan_created` to `api/openapi.yaml` with payload `{subclaims: string[]}`; regenerate both ends; render the list in `AgentTimeline.tsx`. Existing `passage_*` and `final_verdict` events are unchanged. (The generated `_EnsureEveryEventCovered` guard forces the frontend to handle any new event, so it cannot be backend-only.)
 
-Why: the todo list is the most legible thing a deep agent produces. Sub-claim ids on
-`passage_*` events and per-sub-claim verdicts in the UI are skipped: more spec surface
-for a display nicety. Add when the UI needs to group evidence by sub-claim.
+**Why**: the todo list is the most legible thing a deep agent produces. Sub-claim ids on `passage_*` events and per-sub-claim verdicts in the UI are skipped: more spec surface for a display nicety. Add when the UI needs to group evidence by sub-claim.
 
 ## Findings and risks
 
 - **Tool-calling reliability on small models.** This project previously found
-  `function_calling` structured output returns `None` on small Ollama models (hence
-  `method="json_schema"`). A ReAct loop needs real tool calling. Target OpenRouter
-  models that support tools; Ollama is best-effort and may need a bigger model.
+  `function_calling` structured output returns `None` on small Ollama models (hence `method="json_schema"`). A ReAct loop needs real tool calling. Target OpenRouter models that support tools; Ollama is best-effort and may need a bigger model.
 - **Nondeterminism and cost.** Multiple LLM turns per sub-claim. D9 bounds it; log
   turn and tool-call counts so cost per run is observable in LangSmith.
 - **Latency.** Sub-claims run concurrently, but the orchestrator loop is serial. Expect
@@ -172,10 +146,7 @@ verdict). Tests needing an LLM key skip without one.
 
 Differences from the plan, and what the first live run showed.
 
-- **SSRF guard (not in the original design).** Once the model chooses what to fetch, a
-  prompt-injected page could point it at internal addresses. `fetch_page` therefore
-  accepts only URLs a `search` call returned (`Run.seen_urls`), same trust level as
-  the old pipeline.
+- **SSRF guard (not in the original design).** Once the model chooses what to fetch, a prompt-injected page could point it at internal addresses. `fetch_page` therefore accepts only URLs a `search` call returned (`Run.seen_urls`), same trust level as the old pipeline.
 - **`write_todos` is single-shot.** A second call is rejected; a repeat attempt is a
   `delegate` with a `focus`. Simpler than plan revision, and enough so far.
 - **Safety nets.** If the orchestrator never plans, the claim becomes the single todo
@@ -183,39 +154,29 @@ Differences from the plan, and what the first live run showed.
   so verification runs. Real LLM/provider errors are not swallowed: they surface as
   the SSE `error` event.
 - **Reducer change.** The web client now accumulates `queries` and `candidates`
-  (deduplicated by URL) instead of replacing them, because the agent searches many
-  times per run.
+  (deduplicated by URL) instead of replacing them, because the agent searches many times per run.
 - **Removed:** `graph.py`, `document_search.py`, `retries`/`SearchOutput` in the
   domain state, and `MAX_RETRIES`.
 
 ### First live run (OpenRouter free model, Marie Curie Physics + Chemistry claim)
 
 - Planned 2 sub-claims, researched in parallel, 2 supporting Wikipedia passages,
-  verdict SUPPORTED. Correct, but **84 s** and about 25+ LLM calls, versus roughly a
-  dozen calls before.
-- The researcher kept searching for contradicting sources after it already held an
-  authoritative passage. The prompt was tightened ("stop once a source clearly settles
-  it"); the re-run could not be measured because the free tier's 50 requests/day were
-  spent. **Re-measure latency and call count with a paid model before judging D1/D9.**
-- Practical consequence: on a free OpenRouter model, one run uses roughly half the
-  daily quota.
+  verdict SUPPORTED. Correct, but **84 s** and about 25+ LLM calls, versus roughly a dozen calls before.
+- The researcher kept searching for contradicting sources after it already held an authoritative passage. The prompt was tightened ("stop once a source clearly settles it"); the re-run could not be measured because the free tier's 50 requests/day were spent. **Re-measure latency and call count with a paid model before judging D1/D9.**
+- Practical consequence: on a free OpenRouter model, one run uses roughly half the daily quota.
 
 ### Verification done
 
 - Real Wikipedia/DuckDuckGo tool tests plus bounds and guard tests: `tests/test_agents.py`.
-- Opt-in end-to-end test (`RUN_LLM_TESTS=1`) asserts a plan exists, no passage text
-  appears in any orchestrator turn, the verdict is valid, and no temp dir leaks.
-- A scripted tool-calling model driving the real loop confirmed: parallel delegation,
-  unknown-id and SSRF/path-traversal refusals, researcher runs nested under the
-  `fact-check` trace via the passed callbacks, temp dir removed, and the SSE order
-  `plan_created → search_started → candidates_found → passage_found →
+- Opt-in end-to-end test (`RUN_LLM_TESTS=1`) asserts a plan exists, no passage text appears in any orchestrator turn, the verdict is valid, and no temp dir leaks.
+- A scripted tool-calling model driving the real loop confirmed: parallel delegation, unknown-id and SSRF/path-traversal refusals, researcher runs nested under the `fact-check` trace via the passed callbacks, temp dir removed, and the SSE order
+`plan_created → search_started → candidates_found → passage_found →
 passage_verdict → final_verdict → done` with the history row persisted.
 
 ## Second pass: LangChain 1.x idioms
 
 The first build kept 0.2-era workarounds after the stack moved to 1.x (only
-`create_react_agent` was renamed). This pass makes the agents idiomatic. The _logic_
-(plan, delegate, researcher loop, verification) is unchanged; the retry design is
+`create_react_agent` was renamed). This pass makes the agents idiomatic. The _logic_ (plan, delegate, researcher loop, verification) is unchanged; the retry design is
 deliberately deferred.
 
 | Before                                               | Now                                                                                                                                 | Why                                                                                                                         |

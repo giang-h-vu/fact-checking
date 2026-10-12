@@ -67,7 +67,7 @@ def trace_config(user_id: int, prefer_source: str) -> RunnableConfig:
 async def fact_check_run(claim: str, config: RunnableConfig) -> AsyncIterator[RunnableConfig]:
     """One parent run, so research and verification show up as a single trace.
 
-    `config` is `trace_config()`'s. Yields the config to hand to the work inside: its
+    `config` is `trace_config()`'s. Yields the config to hand to the work inside caller's block: its
     callbacks nest every run under "fact-check". Empty in, empty out (tracing off).
     """
     if not config.get("callbacks"):
